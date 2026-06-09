@@ -1,0 +1,198 @@
+[2026-06-09 17:18:04] Info: 
+=== Starting RedRatHub (V8.01) ===
+ 
+[2026-06-09 17:18:04] Info: Loaded signal data from file: DeviceDB.xml 
+[2026-06-09 17:18:04] Info: Loaded signal data from file: C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals_redrat\OVT_NXT_Digital_Remote.xml 
+[2026-06-09 17:18:04] Info: Loaded signal data from file: C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals_redrat\SAMSUNG_SMART_TV.xml 
+[2026-06-09 17:18:04] Error: Could not find a part of the path 'C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals\TEST.xml'. 
+[2026-06-09 17:18:04] Info: HTTP server started at http://[::]:8080 
+[2026-06-09 17:18:04] Info: Searching for RedRat devices...  
+[2026-06-09 17:18:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:07] Info: Found the following RedRat devices: 
+[2026-06-09 17:18:07] Info:  >> [RedRat-X USB] RedRat-X 24103 [DISCONNECTED] 
+[2026-06-09 17:18:07] Info:  
+[2026-06-09 17:18:07] Info: Socket server started on port 40000. Can accept 20 connections. 
+[2026-06-09 17:18:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:26] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:26] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:26] Info: POST http://127.0.0.1:8080/api/redrats/RedRat-X%2024103/4 
+[2026-06-09 17:18:26] Warn: Connected to RedRat 'RedRat-X 24103' 
+[2026-06-09 17:18:26] Debug: [RedRat-X 24103] Connection timer started. 
+[2026-06-09 17:18:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:33] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:33] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:33] Info: POST http://127.0.0.1:8080/api/redrats/RedRat-X%2024103/4 
+[2026-06-09 17:18:33] Debug: [RedRat-X 24103] Connection timer reset. 
+[2026-06-09 17:18:36] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:18:59] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:33] Warn: Disconnected from RedRat 'RedRat-X 24103' 
+[2026-06-09 17:19:33] Debug: [RedRat-X 24103] Connection timer stopped. 
+[2026-06-09 17:19:33] Debug: [RedRat-X 24103] Connection timer completed. 
+[2026-06-09 17:19:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/settings 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/api/config/version 
+[2026-06-09 17:19:53] Info: POST http://127.0.0.1:8080/ws/negotiate 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/api/config/settings 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/api/config/logsettings 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/api/irdata 
+[2026-06-09 17:19:53] Info: GET http://127.0.0.1:8080/ws 
+[2026-06-09 17:19:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:54] Info: Have signalR connection to web UI. 
+[2026-06-09 17:19:55] Info: GET http://127.0.0.1:8080/ 
+[2026-06-09 17:19:55] Info: GET http://127.0.0.1:8080/api/config/version 
+[2026-06-09 17:19:55] Info: POST http://127.0.0.1:8080/ws/negotiate 
+[2026-06-09 17:19:55] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:19:55] Info: GET http://127.0.0.1:8080/ws 
+[2026-06-09 17:19:55] Info: Have signalR connection to web UI. 
+[2026-06-09 17:20:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:17] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:36] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:20:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:21:53] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:36] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:22:59] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:11] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:17] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:23:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:11] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:36] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:24:53] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:47] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:25:59] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:12] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:17] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:26:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:00] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:11] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:17] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:41] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:48] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:53] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:27:59] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:06] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:11] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:17] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:24] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:29] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:36] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:47] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:54] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:28:59] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:05] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:10] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:10] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:10] Info: POST http://127.0.0.1:8080/api/redrats/RedRat-X%2024103/4 
+[2026-06-09 17:29:10] Warn: Connected to RedRat 'RedRat-X 24103' 
+[2026-06-09 17:29:10] Debug: [RedRat-X 24103] Connection timer started. 
+[2026-06-09 17:29:11] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:18] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:23] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:30] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:35] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:37] Info: GET http://127.0.0.1:8080/ 
+[2026-06-09 17:29:37] Info: Disconnected from web UI:  
+[2026-06-09 17:29:37] Info: GET http://127.0.0.1:8080/api/config/version 
+[2026-06-09 17:29:37] Info: POST http://127.0.0.1:8080/ws/negotiate 
+[2026-06-09 17:29:37] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:37] Info: GET http://127.0.0.1:8080/ws 
+[2026-06-09 17:29:37] Info: Have signalR connection to web UI. 
+[2026-06-09 17:29:42] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:47] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:49] Info: GET http://127.0.0.1:8080/ 
+[2026-06-09 17:29:49] Info: Disconnected from web UI:  
+[2026-06-09 17:29:50] Info: GET http://127.0.0.1:8080/api/config/version 
+[2026-06-09 17:29:50] Info: POST http://127.0.0.1:8080/ws/negotiate 
+[2026-06-09 17:29:50] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:29:50] Info: GET http://127.0.0.1:8080/ws 
+[2026-06-09 17:29:50] Info: Have signalR connection to web UI. 
+[2026-06-09 17:29:56] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:02] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:08] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:10] Warn: Disconnected from RedRat 'RedRat-X 24103' 
+[2026-06-09 17:30:10] Debug: [RedRat-X 24103] Connection timer stopped. 
+[2026-06-09 17:30:10] Debug: [RedRat-X 24103] Connection timer completed. 
+[2026-06-09 17:30:13] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:20] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:26] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:32] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:38] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:43] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:50] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:30:55] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:02] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:08] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:13] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:19] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:25] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:31:31] Info: GET http://127.0.0.1:8080/api/redrats 

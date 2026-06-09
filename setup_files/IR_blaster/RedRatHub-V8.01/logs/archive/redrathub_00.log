@@ -1,0 +1,19 @@
+[2026-06-09 17:58:29] Info: 
+=== Starting RedRatHub (V8.01) ===
+ 
+[2026-06-09 17:58:29] Info: Loaded signal data from file: DeviceDB.xml 
+[2026-06-09 17:58:29] Info: Loaded signal data from file: C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals_redrat\OVT_NXT_Digital_Remote.xml 
+[2026-06-09 17:58:29] Info: Loaded signal data from file: C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals_redrat\SAMSUNG_SMART_TV.xml 
+[2026-06-09 17:58:29] Info: Loaded signal data from file: C:\Users\sathi\Desktop\STB_Automation_Framework\assets\ir_signals_redrat\TEST.xml 
+[2026-06-09 17:58:29] Info: HTTP server started at http://[::]:8080 
+[2026-06-09 17:58:29] Info: Searching for RedRat devices...  
+[2026-06-09 17:58:31] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:58:31] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:58:32] Info: Found the following RedRat devices: 
+[2026-06-09 17:58:32] Info:  >> [RedRat-X USB] RedRat-X 24103 [DISCONNECTED] 
+[2026-06-09 17:58:32] Info:  
+[2026-06-09 17:58:32] Info: Socket server started on port 40000. Can accept 20 connections. 
+[2026-06-09 17:58:33] Info: GET http://127.0.0.1:8080/api/redrats 
+[2026-06-09 17:58:33] Info: POST http://127.0.0.1:8080/api/redrats/RedRat-X%2024103/4 
+[2026-06-09 17:58:33] Warn: Connected to RedRat 'RedRat-X 24103' 
+[2026-06-09 17:58:33] Debug: [RedRat-X 24103] Connection timer started. 

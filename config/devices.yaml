@@ -1,0 +1,16 @@
+# devices.yaml
+active_device: ovt_stb
+devices:
+  ovt_stb:
+    backend : ir      # backend means type of key controller using - ir | adb | other
+    key_map : OVT_NXT_Digital_Remote      # Remote key database (.idb or .xml), which captured or learned using third party SW.
+
+# Below-mentioned devices are sample, not implemented. Feature will do.
+  samsung_tv:
+    backend : ir
+    key_map : key_map_samsung
+
+  android_box:
+    backend : adb
+    key_map : key_map_firetv
+
