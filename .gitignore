@@ -2,7 +2,8 @@
 setup_files/logs/*
 
 # Python cache
-__pycache__/
+__pycache__cache__/
+_pycache__/
 *.py[cod]
 
 # Virtual environment
