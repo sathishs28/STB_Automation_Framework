@@ -1,0 +1,14 @@
+# Ignore the redrat hub logs
+setup_files/logs/*
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+.env
+
+# IDE files
+.idea/
+.vscode/

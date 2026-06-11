@@ -6,8 +6,11 @@ import requests
 from core.redrat.exceptions import ConnectionError, IRTransmitError
 from core.logger import setup_logging
 
-# Load .env file
-load_dotenv()
+# Load .env file (silently fail if it doesn't exist)
+try:
+    load_dotenv()
+except Exception:
+    pass
 
 # Setup logger in test script, not here.
 # logger = logging.getLogger(__name__)
@@ -90,6 +93,8 @@ class RedRat_Client:
             "Duration": duration
         }
 
+        last_connection_error = None
+
         for attempt in range(1, self.retry_count + 1):
             try:
                 logger.info(f"Sending '{signal}' | attempt {attempt}")
@@ -124,6 +129,7 @@ class RedRat_Client:
                 raise
 
             except requests.exceptions.ConnectionError:
+                last_connection_error = ConnectionError(f"Hub not reachable at {self.hub_url}")
                 logger.warning(
                     f"Hub not reachable (attempt {attempt}/{self.retry_count})"
                 )
@@ -138,6 +144,10 @@ class RedRat_Client:
                     f"Unexpected error (attempt {attempt}/{self.retry_count}): {e}"
                 )
             time.sleep(0.5)
+
+        if last_connection_error is not None:
+            raise last_connection_error
+
         return None
 
 

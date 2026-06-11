@@ -1,7 +1,7 @@
 import unittest
 import requests
 from unittest.mock import patch, MagicMock
-from core.redrat.exceptions import IRTransmitError
+from core.redrat.exceptions import ConnectionError, IRTransmitError
 from core.redrat.redrat_client import RedRat_Client
 
 class Test_RedRat_Client_Config(unittest.TestCase):

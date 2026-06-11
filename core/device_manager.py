@@ -4,6 +4,7 @@ import importlib
 import time
 from pathlib import Path
 from core.redrat.redrat_hub import RedRatHubManager
+from core.redrat.exceptions import ConnectionError
 from backends.ir_backend import IR_Backend
 
 CONFIG_FILE = (
