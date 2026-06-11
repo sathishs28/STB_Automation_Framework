@@ -1,13 +1,15 @@
 # Ignore the redrat hub logs
-setup_files/logs/*
+/setup_files/IR_blaster/RedRatHub-V8.01/logs/
 
 # Python cache
-__pycache__cache__/
-_pycache__/
+__pycache__/
+**/__pycache__/
 *.py[cod]
 
 # Virtual environment
 .venv/
+
+# Environment variables file, later we can add .env.example to show what variables are needed without exposing secrets
 .env
 
 # IDE files
