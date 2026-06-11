@@ -10,7 +10,7 @@ __pycache__/
 .venv/
 
 # Environment variables file, later we can add .env.example to show what variables are needed without exposing secrets
-.env
+#.env
 
 # IDE files
 .idea/
