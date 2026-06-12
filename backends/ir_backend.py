@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from backends.base import IR_DeviceInterface
 from backends.key_maps.OVT_NXT_Digital_Remote import KEY_MAP
 from core.redrat.redrat_client import RedRat_Client
-from core.redrat.exceptions import IRTransmitError, ConnectionError
+from core.exceptions import IRTransmitError, ConnectionError
 
 # Setup logger
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ import importlib
 import time
 from pathlib import Path
 from core.redrat.redrat_hub import RedRatHubManager
-from core.redrat.exceptions import ConnectionError
+from core.exceptions import ConnectionError
 from backends.ir_backend import IR_Backend
 
 CONFIG_FILE = (
@@ -109,7 +109,7 @@ class Device_Manager:
         else:
             raise ValueError(f"Unknown backend type '{backend_type}'")
 
-    def _health_check(self, retries=10, delay_seconds=2):
+    def _health_check(self, retries=5, delay_seconds=2):
         """Verify device is reachable before tests start."""
         logger.info("Running health check...")
 

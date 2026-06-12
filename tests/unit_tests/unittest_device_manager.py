@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import io
-from core.redrat.exceptions import ConnectionError
+from core.exceptions import ConnectionError
 
 
 class Test_Device_Manager(unittest.TestCase):
