@@ -3,7 +3,7 @@ import time
 import logging
 from dotenv import load_dotenv
 import requests
-from core.redrat.exceptions import ConnectionError, IRTransmitError
+from core.exceptions import ConnectionError, IRTransmitError
 from core.logger import setup_logging
 
 # Load .env file (silently fail if it doesn't exist)
@@ -42,13 +42,24 @@ class RedRat_Client:
         logger.info(f"RedRat Client ready → Hub_URL:{self.hub_url}")
         logger.info(f"dataset={self.dataset}")
         logger.info(f"output_port={self.output_port}")
+    
     def get_devices(self):
         # Returns list of connected RedRat devices
         try:
+            logger.info(f"Fetching devices from hub at {self.hub_url}...")
             response = requests.get(
                 f"{self.hub_url}/api/redrats",
                 timeout=self.timeout
             )
+            # response.raise_for_status()
+            if response.json() == []:
+                logger.info(f"No Devices Found at {self.hub_url}")
+                logger.info(f"Check if the RedRat Hub is running and the RedRat-X device is connected.")
+                logger.info(f"Redrat Client Re-scaning...")
+                response = requests.get(
+                f"{self.hub_url}/api/redrats?rescan=true",
+                timeout=self.timeout
+                )
             response.raise_for_status()
             logger.info(f"Devices: {response.json()}")
             return response.json()

@@ -41,7 +41,8 @@ class RedRatHubManager:
         else:
             paths = [
                 Path("assets/ir_signals_redrat"),
-                Path("assets/ir_signals"),
+                # Additional default paths can be included here if needed, but for now we rely on the user to specify the correct path via REDRAT_IRDATA_FILES or ensure the default path exists and contains XML files.
+                # Path("assets/ir_signals"),
             ]
 
         resolved = []
