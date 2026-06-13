@@ -1,6 +1,8 @@
 # Ignore the redrat hub logs
 /setup_files/IR_blaster/RedRatHub-V8.01/logs/
 
+/evidence/
+
 # Python cache
 __pycache__/
 **/__pycache__/

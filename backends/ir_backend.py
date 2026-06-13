@@ -8,6 +8,7 @@ from backends.base import IR_DeviceInterface
 from backends.key_maps.OVT_NXT_Digital_Remote import KEY_MAP
 from core.redrat.redrat_client import RedRat_Client
 from core.exceptions import IRTransmitError, ConnectionError
+from core.capture import CaptureModule
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class IR_Backend(IR_DeviceInterface):
     def __init__(self, key_map:None):
         self.client = RedRat_Client()
         self.key_map = key_map or {}
+        self.capture = CaptureModule()
         logger.info("IR_Backend initialised")
 
     # ── 1. send_key ──────────────────────────────────────────
@@ -65,13 +67,9 @@ class IR_Backend(IR_DeviceInterface):
     # ── 2. grab_frame ─────────────────────────────────────────
 
     def grab_frame(self):
-        """
-        Capture a frame from HDMI feed.
-        STUB — will be implemented in Phase 3 (GStreamer + PiBox).
-        Returns None for now.
-        """
-        logger.warning("grab_frame() not yet implemented — Phase 3 (GStreamer)")
-        return None
+        """Capture a frame from PiBox HDMI feed or Any other capture device """
+        logger.info("grab_frame called...")
+        return self.capture.grab_frame()
 
     # ── 3. get_device_info ────────────────────────────────────
 

@@ -8,8 +8,13 @@ from urllib.parse import urlparse
 import requests
 from dotenv import load_dotenv
 
+# Load .env file (silently fail if it doesn't exist)
+try:
+    load_dotenv()
+except Exception:
+    pass
+
 logger = logging.getLogger(__name__)
-load_dotenv()
 
 
 class RedRatHubManager:

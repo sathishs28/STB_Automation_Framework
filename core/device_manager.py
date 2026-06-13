@@ -6,6 +6,7 @@ from pathlib import Path
 from core.redrat.redrat_hub import RedRatHubManager
 from core.exceptions import ConnectionError
 from backends.ir_backend import IR_Backend
+from core.capture import CaptureModule
 
 CONFIG_FILE = (
     Path(__file__).resolve().parent.parent
@@ -45,6 +46,9 @@ class Device_Manager:
         # Step 4 — health check
         self._health_check()
 
+        # Start capture pipeline
+        self.backend.capture.start()
+
         logger.info(f"✅ Startup complete — ready to test [{self.device_name}]")
         logger.info("=" * 50)
 
@@ -53,10 +57,16 @@ class Device_Manager:
     def shutdown(self):
         """Call this at the end of every test session."""
         logger.info("STB Framework — shutting down")
-        backend = self.backend
-        self.backend = None
+        
+        # Stop the capture Module
+        if self.backend and self.backend.capture:
+            self.backend.capture.stop()
+
+        # Stop the Redrat Hub
         if hasattr(self, "hub_manager"):
             self.hub_manager.stop()
+
+        self.backend = None
         logger.info("✅ Shutdown complete")
         logger.info("=" * 50)
 
