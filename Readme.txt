@@ -40,7 +40,11 @@ Step 4. After setup done, verify the IR blaster Unittest & Smoke testing, run fo
 
         python -m unittest tests.unit_tests.unittest_device_manager
     For Smoke test:
-        python.exe .\tests\smoke_tests\ir_device_smoke_test.py
+        # Smoke test for IR validate.
+        python -m tests.smoke_tests.ir_device_smoke_test
+
+        # Smoke test for IR + Capture device.
+        python -m tests.smoke_tests.ir+capture_smoke_test 
 
     After run the smoke testing, given key signal responsed in STB.
 
