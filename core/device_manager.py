@@ -6,7 +6,6 @@ from pathlib import Path
 from core.redrat.redrat_hub import RedRatHubManager
 from core.exceptions import ConnectionError
 from backends.ir_backend import IR_Backend
-from core.capture import CaptureModule
 
 CONFIG_FILE = (
     Path(__file__).resolve().parent.parent
