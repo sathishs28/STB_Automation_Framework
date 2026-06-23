@@ -138,27 +138,38 @@ class CaptureModule:
         import inspect
 
         frame = self.grab_frame()
-
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
         if not filename:
-            # Get caller script filename
             caller_file = inspect.stack()[1].filename
             test_name = os.path.splitext(os.path.basename(caller_file))[0]
 
-            filename = f"{test_name}_{timestamp}.png"
+            evidence_dir = os.getenv("EVIDENCE_DIR", "evidence")
+            os.makedirs(evidence_dir, exist_ok=True)
+
+            path = os.path.join(
+                evidence_dir,
+                f"{test_name}_{timestamp}.png"
+            )
+
         else:
-            name, ext = os.path.splitext(filename)
+            directory = os.path.dirname(filename)
+            basename = os.path.basename(filename)
+
+            name, ext = os.path.splitext(basename)
             ext = ext or ".png"
-            filename = f"{name}_{timestamp}{ext}"
 
-        evidence_dir = os.getenv("EVIDENCE_DIR", "evidence")
-        os.makedirs(evidence_dir, exist_ok=True)
+            final_name = f"{name}_{timestamp}{ext}"
 
-        path = os.path.join(evidence_dir, filename)
+            if directory:
+                os.makedirs(directory, exist_ok=True)
+                path = os.path.join(directory, final_name)
+            else:
+                evidence_dir = os.getenv("EVIDENCE_DIR", "evidence")
+                os.makedirs(evidence_dir, exist_ok=True)
+                path = os.path.join(evidence_dir, final_name)
+
         cv2.imwrite(path, frame)
 
         logger.info(f"Screenshot saved → {path}")
-        logger.debug(f"Screenshot saved → {path}")
-
         return path
