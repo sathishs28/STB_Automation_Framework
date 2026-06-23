@@ -1,10 +1,18 @@
 # run this once to capture a template
-from core.device_manager import Device_Manager
+import time
+from core.capture import CaptureModule
 
-dm      = Device_Manager()
-backend = dm.startup()
+cap      = CaptureModule()
+cap.start()
 
 # Grab full frame and save
-backend.capture.save_screenshot("full_screen.png")
+# frame = backend.grab_frame()
+# print(frame)
 
-dm.shutdown()
+timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+path = f"frame_captured_{timestamp}.png"
+cap.save_screenshot(filename=path)
+
+print("Frame saved on root directory:",path)
+cap.stop()
