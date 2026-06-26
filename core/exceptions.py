@@ -12,3 +12,7 @@ class ConnectionError(DeviceError):
 
 class CaptureError(DeviceError):
     pass
+
+class ConfigError(Exception):
+    """Configuration related errors"""
+    pass

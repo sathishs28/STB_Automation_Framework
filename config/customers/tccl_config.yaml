@@ -1,0 +1,25 @@
+# TCCL STB configuration.
+customer:
+  name: tccl
+
+boot_sequence:
+  - boot_logo
+#  - boot_logo2
+  - boot_ad
+#  - boot_loading
+  
+timeouts:
+  boot_to_live    : 60
+  channel_change_s: 10
+  menu_open_s     : 5
+  epg_open_s      : 8
+  settle_s        : 3
+
+ui_templates:
+  # Path defined in config_loader.py file (Refer core/config_loader.py) 
+  # Templates filename
+  boot_logo    : boot_logo.png
+  boot_ad      : boot_ad.png
+  epg          : epg_screen.png
+  menu         : menu_screen.png
+
