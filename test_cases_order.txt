@@ -1,0 +1,230 @@
+-------------------
+STB AUTOMATION GOAL
+-------------------
+    * In most leading companies (Comcast, Sky, Liberty Global, Airtel Xstream, Tata Play, Vodafone TV, Android TV operators, IPTV middleware vendors), the strategy is not to start with regression.
+
+The order is usually:
+
+    Phase 1: Smoke Suite (Build First)
+    Phase 2: Sanity Suite
+    Phase 3: Regression Suite
+
+Test Case Structure:
+--------------------
+├── smoke/
+│   ├── test_boot.py
+│   ├── test_live_tv.py
+│
+├── sanity/
+│   ├── test_epg.py
+│   ├── test_settings.py
+│
+├── regression/
+│   ├── test_recording.py
+│   ├── test_timeshift.py
+│   ├── test_network.py
+│   ├── test_ota.py
+
+Phase 1: Smoke Suite (Build First):
+--------
+    This is the first automation suite you should create.
+
+    Purpose:"Can the build be tested at all?"
+
+    Execution time:
+
+    5–15 minutes
+    Run on every build
+
+    Typical STB Smoke Suite:
+
+    Boot STB
+    ↓
+    Verify Live TV
+    ↓
+    Verify Audio
+    ↓
+    Verify Video
+    ↓
+    Channel Up
+    ↓
+    Channel Down
+    ↓
+    Open Menu
+    ↓
+    Open EPG
+    ↓
+    Return Live TV
+    ↓
+    Reboot
+    ↓
+    Verify Live TV
+
+    Duration: Around 10-20 tests.
+
+    Example:
+
+    test_boot_to_live_tv()
+        - After power on
+
+    test_channel_up()
+
+    test_channel_down()
+
+    test_menu_open()
+
+    test_epg_open()
+
+    test_reboot_recovery()
+
+    If Smoke fails:
+
+    STOP TESTING
+    Reject Build
+Note:
+    No sanity.
+    No regression.
+
+Phase 2: Sanity Suite
+--------
+
+    After smoke is stable.
+
+    Purpose: Verify the newly changed feature.
+
+Suppose developer fixed: EPG navigation bug
+
+    Sanity Suite:
+
+    test_epg_open()
+
+    test_epg_scroll()
+
+    test_epg_event_info()
+
+    test_epg_close()
+
+    Execution:
+
+    20-60 minutes
+
+    Run:
+
+    On bug fixes
+    On feature changes
+    Before regression
+
+Phase 3: Regression Suite
+--------
+
+    Build only after Smoke and Sanity are stable.
+
+Purpose: Ensure nothing else broke.
+
+Execution: 2-12 hours
+
+Contains:
+
+Channel tuning
+Audio
+Video
+EPG
+USB
+OTA
+Recording
+Timeshift
+Settings
+Network
+Standby
+Factory Reset
+
+Potentially hundreds of tests.
+
+What Industry Teams Usually Automate First
+
+Priority matrix:
+----------------
+
+Priority	Area	            Reason
+P0	        Boot	            Customer can't use box
+P0	        Live TV	Core        functionality
+P0	        Audio/Video	        Highest complaint area
+P0	        Channel Zapping	    Most-used feature
+P0	        Reboot Recovery     Stability
+P1	        EPG	                Heavy daily use
+P1	        Menu                Navigation	Frequent usage
+P1	        Volume/Mute	        Basic functionality
+P2	        Settings	        Less frequent
+P2	        USB	                Optional
+P2	        OTA	                Release testing
+P3	        Recording	        Advanced feature
+P3	        Timeshift	        Advanced feature
+
+TEST CASE ORDER:
+----------------
+1=> Smoke Suite v1:
+
+TC001 - Boot to Live TV
+
+TC002 - Verify Audio Present
+
+TC003 - Verify Video Present
+
+TC004 - Verify No Black Screen
+
+TC005 - Channel Up
+
+TC006 - Channel Down
+
+TC007 - Open Main Menu
+
+TC008 - Open EPG
+
+TC009 - Return to Live TV
+
+TC010 - Reboot Recovery
+
+Only 10 tests.
+
+Goal:
+------
+Execution Time < 10 minutes
+Pass Rate > 95%
+
+2=> Smoke Suite v2
+Add:
+
+TC011 - Volume Up
+
+TC012 - Volume Down
+
+TC013 - Mute
+
+TC014 - Channel Number Entry
+
+TC015 - Channel Banner Validation
+
+3=> Then Build Sanity Suites
+
+Separate by feature:
+
+sanity_epg.py
+
+sanity_channel.py
+
+sanity_settings.py
+
+sanity_network.py
+
+Example:
+
+pytest tests/sanity/test_epg.py
+
+Note:Regression Comes Last
+
+
+If I were leading an STB automation project from scratch, I would spend the first month building 
+a rock-solid 10–20 test smoke suite around Boot, Live TV, AV validation, Channel Zapping, Menu, EPG,
+and Reboot Recovery. Only after those tests are stable and trusted would I invest time in large 
+regression coverage. That's the approach most mature QA teams follow because a fast, 
+reliable smoke suite provides immediate value on every build.
