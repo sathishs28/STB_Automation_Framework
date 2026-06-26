@@ -145,3 +145,40 @@ class VisualMatcher:
         logger.info(f"Debug image saved → {output_path}")
 
         return found, score, location
+    
+    def is_same(self, frame, template_path):
+        """
+        Identify the frame1 -> Live frame and frame2 -> full frame template are equal/same.
+        To use this method for boot logo,ad and other full frame epg, stb info..etc. are present or not.
+        
+        """
+        try:
+            # Load template
+            if not os.path.exists(template_path):
+                logger.error(f"❌ Template not found: {template_path}")    
+                raise FileNotFoundError(f"Template not found: {template_path}")
+
+            template = cv2.imread(template_path)    # Read the template image from the specified path
+            if template is None:
+                raise FileNotFoundError(f"Template not found: {template_path}")
+        except exec as e:
+            logger.error("Template load error...", e)
+            
+        logger.info("Template Load success.")
+
+        result = cv2.matchTemplate(
+            frame,
+            template,
+            cv2.TM_CCOEFF_NORMED
+        )
+        
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        logger.info(f"Identical Match Score: {max_val:.4f}")
+
+        if max_val >= 0.95:
+            logger.info(" ✅ Template Frame detected")
+            return True, max_val
+        else:
+            logger.warning("❌ Template Frame is not detected")
+            return False, None
