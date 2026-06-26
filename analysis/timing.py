@@ -22,12 +22,13 @@ class TimingEngine:
         """
         Stop timer and return elapsed milliseconds.
         """
+        elapsed_ms = 0
         if self._start_time is None:
             raise RuntimeError("Timer not started — call start() first")
-
+        
         elapsed_ms       = (time.perf_counter() - self._start_time) * 1000
         self._start_time = None
-        logger.info(f"⏱ Timer stopped — elapsed: {elapsed_ms:.1f}ms")
+        logger.info(f"⏱ Timer stopped — elapsed: {elapsed_ms:.1f}ms") 
         return elapsed_ms
 
     # ── 2. Zap time measurement ───────────────────────────
