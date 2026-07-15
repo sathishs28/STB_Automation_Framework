@@ -4,6 +4,8 @@ import time
 import numpy as np
 from core.logger import logging
 from analysis.ocr import OCREngine
+from skimage.metrics import structural_similarity as ssim
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 ocr = OCREngine()
@@ -23,22 +25,27 @@ class AVQualityChecker:
 
     # ── 1. Black screen detection ─────────────────────────
 
-    def is_black_screen(self, frame):
+    def is_black_screen(self, frame, region=None):
         """
         Check if screen is black — no signal or STB crashed.
 
         Returns: (is_black, black_pixel_percentage)
         """
+        # To check only the specified Region.
+        if region:
+            x, y, w, h = region
+            frame = frame[y:y + h, x:x + w]
+
         # Convert the frame from color RGB to grayscale
         gray         = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # cv2.imwrite("temp/av_quality_gray_converted_image.png", gray)
         
         logger.debug(f"Minimum color value (0-255): {gray.min()}")
         logger.debug(f"Maximum color value (0-255): {gray.max()}")
-        logger.debug(f"Meaning/accuret color value: {gray.mean():.2f}")
+        logger.debug(f"Meaning/accurate color value: {gray.mean():.2f}")
         
         black_pixels = np.sum(gray < self.black_threshold)
-        logger.info(f"Total black/dark pixles in current frame: {black_pixels}")
+        logger.info(f"Total black/dark pixels in current frame: {black_pixels}")
 
         total_pixels = gray.size
         black_ratio   = black_pixels / total_pixels
@@ -52,27 +59,31 @@ class AVQualityChecker:
             logger.info(f"✅ Screen has content — {percentage:2f}% black pixels")
         return is_black, percentage
 
-    # ── 2. Freeze detection ───────────────────────────────
-    def is_frozen(self, frame1, frame2):
+    # ── 2. Freeze / Motion detection ───────────────────────────────
+    def is_frozen(self, frame1, frame2, freeze_threshold=5.0, region=None):
         """
         Compare two frames — if nearly identical, video is frozen.
         Grab two frames ~1 second apart and pass both here.
 
         Returns: (is_frozen, similarity_score)
         """
+        # To check only the specified Region.
+        if region:
+            x, y, w, h = region
+            frame1 = frame1[y:y + h, x:x + w]
+            frame2 = frame2[y:y + h, x:x + w]
+
         gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
         gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
 
-        # Normalised cross-correlation — 1.0 = identical
-        result    = cv2.matchTemplate(gray1, gray2, cv2.TM_CCOEFF_NORMED)
-        _, score, _, _ = cv2.minMaxLoc(result)
-
-        is_frozen = score >= self.freeze_threshold
+        diff = cv2.absdiff(gray1, gray2)
+        score = np.mean(diff)
+        is_frozen = score < freeze_threshold
 
         if is_frozen:
             logger.warning(f"⚠️ Frozen frame detected — similarity={score:.4f}")
-            cv2.imwrite("evidence/frozen_frame1.png", frame1)
-            cv2.imwrite("evidence/frozen_frame2.png", frame2)
+            cv2.imwrite(f"evidence/{self}_frozen_frame1.png", frame1)
+            cv2.imwrite(f"evidence/{self}_frozen_frame2.png", frame2)
         else:
             logger.info(f"✅ Video is moving — similarity={score:.4f}")
         return is_frozen, score
@@ -132,19 +143,19 @@ class AVQualityChecker:
                 logger.warning(f"⚠️ No signal text found {text}")
                 break
              
-        # Check 2 — Verify the video frame is freezed.
-        is_freze, _ = self.is_frozen(frame1, frame2)
-        logger.debug(f"Video freeeze: {is_freze}")
+        # Check 2 — Verify the video frame is frozen.
+        is_freeze, _ = self.is_frozen(frame1, frame2)
+        logger.debug(f"Video freeze: {is_freeze}")
 
-        if found and is_freze:
+        if found and is_freeze:
             logger.warning(f"⚠️ No signal banner/i-frame is present")
             return True, "No signal"
         
-        elif found and not is_freze:
+        elif found and not is_freeze:
             logger.warning(f"⚠️ No signal banner is present, But background AV is playing...⚠️")
             return False, "No signal banner with AV playing"
         
-        elif not found and is_freze:
+        elif not found and is_freeze:
             logger.warning(f"⚠️ Video frozen, But No signal banner is not there ⚠️")
             return False, "Video stuck, There is no signal banner"
         
@@ -185,3 +196,65 @@ class AVQualityChecker:
             logger.warning(f"⚠️ Video health: FAIL → {result}")
 
         return result
+    
+    def is_frozen_ssim(self,frame1, frame2, region=None):
+
+        """
+        SSIM (Structural Similarity Index Measure) is a perceptual metric used to quantify 
+        the degradation of image quality or compare similarities between two images
+        """
+        # To check only the specified Region.
+        if region:
+            x, y, w, h = region
+            frame1 = frame1[y:y + h, x:x + w]
+            frame2 = frame2[y:y + h, x:x + w]
+
+        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+
+        score, _ = ssim(gray1, gray2, full=True)
+        is_frozen_ssim = score >= self.freeze_threshold
+
+        if is_frozen_ssim:
+            logger.warning(f"⚠️ Frozen frame detected By SSIM — similarity={score:.4f}")
+            # cv2.imwrite(f"evidence/frozen_ssim_frame1.png", frame1)
+            # cv2.imwrite(f"evidence/frozen_ssim_frame2.png", frame2)
+        else:
+            logger.info(f"✅ Video is moving — Detected By SSIM. Similarity={score:.4f}")
+        return is_frozen_ssim, score
+
+    def motion_detect(self, previous_frame, current_frame, threshold=5.0, region=None):
+        """
+        Detect motion between two frames.
+        Args:
+            previous_frame (numpy.ndarray)
+            current_frame (numpy.ndarray)
+            threshold (float): Mean pixel difference threshold.
+            region (tuple): (x, y, w, h)
+        Returns:
+            bool
+        """
+        if previous_frame is None or current_frame is None:
+            return False
+
+        # Optional ROI to check only the specified Region.
+        if region:
+            x, y, w, h = region
+            previous_frame = previous_frame[y:y + h, x:x + w]
+            current_frame = current_frame[y:y + h, x:x + w]
+
+        gray1 = cv2.cvtColor(previous_frame, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
+
+        diff = cv2.absdiff(gray1, gray2)
+        motion_score = np.mean(diff)
+        status = motion_score > threshold
+
+        if status:
+            logger.info(f"✅ Video is moving. Motion Score={motion_score:.4f}")
+        else:
+            logger.warning(f"⚠️ Frozen frame detected, Motion Score={motion_score:.4f}")
+            # cv2.imwrite(f"evidence/motion_detect_previous_frame.png", previous_frame)
+            # cv2.imwrite(f"evidence/motion_detect_current_frame.png", current_frame)
+        return status, motion_score
+
