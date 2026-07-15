@@ -30,16 +30,16 @@ KEY_MAP = {
     "REC"      : "REC",
 
     # Numbers
-    "NUM_0"    : "0",
-    "NUM_1"    : "1",
-    "NUM_2"    : "2",
-    "NUM_3"    : "3",
-    "NUM_4"    : "4",
-    "NUM_5"    : "5",
-    "NUM_6"    : "6",
-    "NUM_7"    : "7",
-    "NUM_8"    : "8",
-    "NUM_9"    : "9",
+    "0"    : "0",
+    "1"    : "1",
+    "2"    : "2",
+    "3"    : "3",
+    "4"    : "4",
+    "5"    : "5",
+    "6"    : "6",
+    "7"    : "7",
+    "8"    : "8",
+    "9"    : "9",
 
     # Info
     "INFO"     : "INFO",
@@ -53,9 +53,9 @@ KEY_MAP = {
     "TV/RADIO"  : "TV/RADIO",
 
     # COLOR KEYS
-    "YELLOW COLOR KEY"  : "YELLOW COLOR",
-    "RED COLOR KEY"     : "RED COLOR",
-    "BLUE COLOR KEY"    : "BLUE COLOR",
+    "YELLOW COLOR KEY"  : "YELLOW COLOR KEY",
+    "RED COLOR KEY"     : "RED COLOR KEY",
+    "BLUE COLOR KEY"    : "BLUE COLOR KEY",
     "GREEN COLOR KEY"   : "GREEN COLOR KEY",
 
 }
