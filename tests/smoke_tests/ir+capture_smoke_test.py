@@ -12,6 +12,6 @@ frame = backend.grab_frame()
 print("Frame shape:", frame.shape)
 
 # Save evidence
-backend.capture.save_screenshot("smoke_test.png")
+backend.capture.save_frame()
 
 dm.shutdown()
