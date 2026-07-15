@@ -4,10 +4,7 @@ import time
 import logging
 import numpy as np
 from core.exceptions import CaptureError
-from core.logger import setup_logging
-
-# Log set
-setup_logging()
+from core.logger import logging
 
 import gi
 
@@ -131,13 +128,15 @@ class CaptureModule:
 
         return frame  # BGR numpy array — OpenCV compatible
     
-    def save_screenshot(self, filename=None):
+    def save_screenshot(self, filename=None, frame=None):
         import cv2
         import os
         import time
         import inspect
 
-        frame = self.grab_frame()
+        if frame is None:
+            frame = self.grab_frame()
+
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
         if not filename:

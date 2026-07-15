@@ -71,6 +71,11 @@ class IR_Backend(IR_DeviceInterface):
         logger.info("grab_frame called...")
         return self.capture.grab_frame()
 
+    def save_frame(self, filename=None, frame=None):
+        """Save the current frame into screenshot .png """
+        logger.info("save_frame called...")
+        return self.capture.save_screenshot(filename, frame)
+
     # ── 3. get_device_info ────────────────────────────────────
 
     def get_device_info(self):
