@@ -8,9 +8,7 @@ from analysis.visual_match import VisualMatcher
 from analysis.ocr import OCREngine
 from analysis.av_quality import AVQualityChecker
 from analysis.timing import TimingEngine
-
-from src.validators.boot import Boot
-
+from src.setup import STB
 
 # ---------------------------------------------------------
 # Configuration
@@ -24,7 +22,12 @@ def config():
     cfg.load()
     return cfg
 
-
+@pytest.fixture(scope="session")
+def customer(config):
+    """
+    Get the Customer name
+    """
+    return config.get("customer.name")
 # ---------------------------------------------------------
 # Backend
 # ---------------------------------------------------------
@@ -67,16 +70,13 @@ def timer():
 
 
 # ---------------------------------------------------------
-# Validators
+# Framework context Setup
 # ---------------------------------------------------------
 
 @pytest.fixture(scope="session")
-def boot(config, backend,matcher,ocr,av,timer):
-    """
-    Boot validator shared across the test session.
-    """
-    return Boot(
-        customer=config.get("customer.name"),
+def stb(customer, backend, ocr, matcher, config, av, timer):
+    return STB(
+        customer=customer,
         config=config,
         backend=backend,
         matcher=matcher,
