@@ -3,17 +3,25 @@ customer:
   name: tccl
 
 boot_sequence:
-  - boot_logo
+#  - boot_logo
 #  - boot_logo2
   - boot_ad
 #  - boot_loading
   
 timeouts:
   boot_to_live    : 60
-  channel_change_s: 10
-  menu_open_s     : 5
-  epg_open_s      : 8
-  settle_s        : 3
+
+region:
+  channel_banner:
+    lcn: (248, 515, 61, 39)
+    service_name: (312, 515, 304, 42)
+    time: (1033, 548, 80, 35)
+    date: (1117, 549, 113, 32)
+    epg_now_start_time: (311, 588, 69, 38)
+    epg_now_event_name: (383, 590, 328, 37)
+    epg_next_start_time: (782, 586, 68, 42)
+    epg_next_event_name: (852, 586, 329, 47)
+  no_signal: (366, 155, 552, 160)
 
 ui_templates:
   # Path defined in config_loader.py file (Refer core/config_loader.py) 
@@ -21,5 +29,12 @@ ui_templates:
   boot_logo    : boot_logo.png
   boot_ad      : boot_ad.png
   epg          : epg_screen.png
-  menu         : menu_screen.png
+  menu         : menu.png
+  password     : password_banner.png
 
+navigate:
+  auto_search: RIGHT
+  factory_reset: [UP, UP]
+
+banner_messages:
+  no_signal: NO SIGNAL
