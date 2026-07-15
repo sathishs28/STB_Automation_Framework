@@ -16,6 +16,11 @@ class IR_DeviceInterface(ABC):
         pass
 
     @abstractmethod
+    def save_frame(self):
+        """Save the current frame into screenshot .png"""
+        pass
+
+    @abstractmethod
     def get_device_info(self):
         """Return current device status"""
         pass
