@@ -1,0 +1,6 @@
+projectKey=STB_Automation_Framework_Code_Review
+serverUrl=http://localhost:9000
+serverVersion=26.7.0.124771
+dashboardUrl=http://localhost:9000/dashboard?id=STB_Automation_Framework_Code_Review
+ceTaskId=2b7e8870-5c52-4e34-8fb1-12e1c3510a9c
+ceTaskUrl=http://localhost:9000/api/ce/task?id=2b7e8870-5c52-4e34-8fb1-12e1c3510a9c
