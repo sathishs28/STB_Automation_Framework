@@ -108,21 +108,3 @@ class IR_Backend(IR_DeviceInterface):
                 device_id    = self.client.device_id,
                 dataset      = self.client.dataset,
             )
-"""
-backend = IR_Backend()
-
-# 1 — check device info
-info = backend.get_device_info()
-print("Connected  :", info.is_connected)
-print("Device ID  :", info.device_id)
-print("Dataset    :", info.dataset)
-
-# 2 — send a key — STB should respond
-backend.send_key("VOL_UP")
-
-# 3 — send repeated keys
-backend.send_key("CH_UP")
-
-# 4 — wrong key — should fail clearly
-backend.send_key("WRONG_KEY")
-"""

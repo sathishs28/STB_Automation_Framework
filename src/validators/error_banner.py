@@ -21,7 +21,7 @@ class ErrorBanner:
         lib used: ocr.contains_text(current_frame, expected_text, region)
         returns: found (True or False), all text
         """
-        for i in range(timeout,0,-1):
+        for _ in range(timeout,0,-1):
             no_signal_frame = self.ctx.backend.grab_frame()
             no_signal_region = literal_eval(self.ctx.config.get("region.no_signal"))
             found, _ = self.ctx.ocr.contains_text(no_signal_frame, self.ctx.config.get("banner_messages.no_signal"), no_signal_region)

@@ -73,7 +73,7 @@ class LiveTV:
         self.ctx.backend.save_frame(f"{self.ctx.evidence_path}/Live_TV_last_frame.png", previous_frame)
         return False
 
-    def is_live_tv_playing(self, duration=10, wait_time=30):
+    def is_live_tv_playing(self, wait_time=30):
         """
         This method is used to check the Live TV is playing or not.
         Checking the current frame is black or not. If it detects black frame until it wait upto timeout time.

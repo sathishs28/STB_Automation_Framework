@@ -165,10 +165,10 @@ class Boot:
                     max_boot = self.ctx.config.get("timeouts.boot_to_live")
                     logger.info(f"Current Boot time: {total_elapsed_time}s exceeded max {max_boot}s")
                     return False, total_elapsed_time, results
-                
-        except ConfigError as e :
-            logger.error("Boot sequence is not loaded", e) 
-            raise ConfigError("Boot sequence is not loaded")       
+           
+        except ConfigError:
+            logger.exception("Boot sequence is not loaded")
+            raise
           
     def af_boot_is_live_tv_playing(self):
         """

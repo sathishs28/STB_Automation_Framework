@@ -112,7 +112,7 @@ class AVQualityChecker:
         # Compare each consecutive pair
         frozen_pairs = 0
         for i in range(len(frames) - 1):
-            is_frozen, score = self.is_frozen(frames[i], frames[i+1])
+            is_frozen, _ = self.is_frozen(frames[i], frames[i+1])
             if is_frozen:
                 frozen_pairs += 1
 
@@ -148,19 +148,19 @@ class AVQualityChecker:
         logger.debug(f"Video freeze: {is_freeze}")
 
         if found and is_freeze:
-            logger.warning(f"⚠️ No signal banner/i-frame is present")
+            logger.warning("⚠️ No signal banner/i-frame is present")
             return True, "No signal"
         
         elif found and not is_freeze:
-            logger.warning(f"⚠️ No signal banner is present, But background AV is playing...⚠️")
+            logger.warning("⚠️ No signal banner is present, But background AV is playing...⚠️")
             return False, "No signal banner with AV playing"
         
         elif not found and is_freeze:
-            logger.warning(f"⚠️ Video frozen, But No signal banner is not there ⚠️")
+            logger.warning("⚠️ Video frozen, But No signal banner is not there ⚠️")
             return False, "Video stuck, There is no signal banner"
         
         else:
-            logger.info(f"✅ AV is playing normally...✅")
+            logger.info("✅ AV is playing normally...✅")
             return False, "AV is playing"
         
     # ── 4. Combined health check ──────────────────────────
@@ -172,7 +172,7 @@ class AVQualityChecker:
 
         Returns: dict with all check results
         """
-        no_signal, reason  = self.is_no_signal(frame1, frame2)
+        no_signal, _  = self.is_no_signal(frame1, frame2)
         is_black, black_pct = self.is_black_screen(frame1)
 
         result = {
@@ -217,8 +217,6 @@ class AVQualityChecker:
 
         if is_frozen_ssim:
             logger.warning(f"⚠️ Frozen frame detected By SSIM — similarity={score:.4f}")
-            # cv2.imwrite(f"evidence/frozen_ssim_frame1.png", frame1)
-            # cv2.imwrite(f"evidence/frozen_ssim_frame2.png", frame2)
         else:
             logger.info(f"✅ Video is moving — Detected By SSIM. Similarity={score:.4f}")
         return is_frozen_ssim, score

@@ -54,8 +54,8 @@ class RedRat_Client:
             # response.raise_for_status()
             if response.json() == []:
                 logger.info(f"No Devices Found at {self.hub_url}")
-                logger.info(f"Check if the RedRat Hub is running and the RedRat-X device is connected.")
-                logger.info(f"Redrat Client Re-scaning...")
+                logger.info("Check if the RedRat Hub is running and the RedRat-X device is connected.")
+                logger.info("Redrat Client Re-scaning...")
                 response = requests.get(
                 f"{self.hub_url}/api/redrats?rescan=true",
                 timeout=self.timeout
@@ -110,24 +110,25 @@ class RedRat_Client:
             try:
                 logger.info(f"Sending '{signal}' | attempt {attempt}")
 
+                # Sending signal to RedRat Hub server
                 response = requests.post(url, data=data, timeout=self.timeout)
                 if response.status_code == 200:
                     logger.info(f"✅ '{signal}' sent successfully")
                     return True
 
                 elif response.status_code == 400:
-                    logger.error(f"❌ Bad request — Dataset or Signal field is missing or malformed")
+                    logger.error("❌ Bad request — Dataset or Signal field is missing or malformed")
                     logger.error(f"   Check → Dataset='{self.dataset}' | Signal='{signal}'")
                     raise IRTransmitError(f"Bad request for signal '{signal}'")
 
                 elif response.status_code == 404:
-                    logger.error(f"❌ Device not found — wrong device ID")
+                    logger.error("❌ Device not found — wrong device ID")
                     logger.error(f"   Check → REDRAT_DEVICE_ID='{self.device_id}' in your .env")
                     logger.error(f"   Tip   → Run GET /api/redrats in Swagger to get correct ID")
                     raise IRTransmitError(f"Device '{self.device_id}' not found")
 
                 elif response.status_code == 500:
-                    logger.error(f"❌ Signal not found in dataset")
+                    logger.error("❌ Signal not found in dataset")
                     logger.error(f"   Check → Signal='{signal}' in dataset='{self.dataset}'")
                     logger.error(
                         f"   Tip   → Run GET /api/datasets/{self.dataset}/signals in Swagger to list valid signals")

@@ -69,7 +69,7 @@ class STB:
         
         # Validators
         self.boot = Boot(self.ctx)
-        self.liveTV = LiveTV(self.ctx)
-        # self.av = AV(self.ctx)
+        self.live_tv = LiveTV(self.ctx)
+        
         
         

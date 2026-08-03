@@ -153,18 +153,26 @@ class VisualMatcher:
         
         """
         try:
-            # Load template
+            # Check whether the template file exists
             if not os.path.exists(template_path):
                 logger.error(f"❌ Template not found: {template_path}")    
                 raise FileNotFoundError(f"Template not found: {template_path}")
-
-            template = cv2.imread(template_path)    # Read the template image from the specified path
-            if template is None:
-                raise FileNotFoundError(f"Template not found: {template_path}")
-        except exec as e:
-            logger.error("Template load error...", e)
             
-        logger.info("Template Load success.")
+            # Load template image
+            template = cv2.imread(template_path)    # Read the template image from the specified path
+            
+            if template is None:
+                raise FileNotFoundError(f"Failed to read template image: {template_path}")
+            
+            logger.info(f"✅ Template loaded successfully: {template_path}")
+        
+        except FileNotFoundError:
+            logger.exception(f"⚠️ Template file not found: {template_path}")
+            raise
+
+        except Exception:
+            logger.exception(f"❌ Failed to load template: {template_path}")
+            raise
 
         result = cv2.matchTemplate(
             frame,
@@ -172,7 +180,7 @@ class VisualMatcher:
             cv2.TM_CCOEFF_NORMED
         )
         
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        _, max_val, _, _ = cv2.minMaxLoc(result)
 
         logger.info(f"Identical Match Score: {max_val:.4f}")
 

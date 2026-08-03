@@ -25,10 +25,10 @@ class Autoscan:
         """
         This method is used to navigate to the autoscan menu.
         """
-        if self.menu.invoke_menu():
-            if self.menu.go_to_autosearch():
-                pass
-
+        if self.menu.invoke_menu() and self.menu.go_to_autosearch():
+            logger.info("Autoscan menu navigation started.")
+        else:
+            logger.warning("Failed to navigate to autoscan menu.")
 
         logger.info("Autoscan menu navigation complete.")
 
@@ -74,7 +74,7 @@ class Autoscan:
         interation = 1
         while True:
             logger.info("Checking if Autoscan has failed...")
-            for attempt in range(repeat):
+            for _ in range(repeat):
                 # logger.info(f" ✅✅✅ Autoscan Check attempt: {attempt + 1} ✅✅✅ ")
                 logger.info(f" ✅✅✅ Autoscan Check attempt: {interation} ✅✅✅ ")
                 auto_scan = self.ctx.go_to_autoscan()
@@ -84,7 +84,7 @@ class Autoscan:
                     tune_started = False
                     while True:
                         auto_search_frame = self.ctx.backend.grab_frame()
-                        found_autoscan, all_txt = self.ctx.ocr.contains_text(auto_search_frame, "Auto Search")
+                        found_autoscan, _ = self.ctx.ocr.contains_text(auto_search_frame, "Auto Search")
                         
                         if found_autoscan:
                             logger.info("Autoscan in progress. Waiting for completion...") 
@@ -109,7 +109,7 @@ class Autoscan:
                                     output_path = f"{self.ctx.evidence_path}/{self.ctx.customer}_auto_scan_error_at_attempt_{interation}_{self.ctx.timestamp}.png"
                                     cv2.imwrite(output_path, auto_search_frame)
                                     logger.info(f"Error image saved → {output_path}")
-                                    # return True  # Autoscan failed
+                                    
                             else:
                                 logger.info("Tuning has started. Waiting for completion...")
                                 tune_started = True      
@@ -125,7 +125,7 @@ class Autoscan:
                     self.ctx.remote.exit(repeat=3)
                     logger.info("Wait for next try...")
                     time.sleep(delay)        
-            # return False  # Autoscan did not fail after all attempts
+            
             interation += 1
             logger.info("Wait for next try...")
             self.ctx.remote.exit(repeat=3)

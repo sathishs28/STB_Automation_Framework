@@ -140,7 +140,7 @@ class Device_Manager:
             logger.error("   Check → Is RedRat-X plugged in via USB?")
             raise ConnectionError("Device not connected — aborting startup")
 
-        logger.info(f"✅ Health check passed")
+        logger.info("✅ Health check passed")
         logger.info(f"   Device ID  : {info.device_id}")
         logger.info(f"   Dataset    : {info.dataset}")
         logger.info(f"   Backend    : {info.backend}")

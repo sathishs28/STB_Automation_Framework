@@ -1,7 +1,6 @@
 # analysis/ocr.py
 import os
 import cv2
-# import logging
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -20,7 +19,7 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 # Point pytesseract to the Tesseract binary
-# Geting the tessract path from .env, if not exits. Used default path.
+# Getting the tessract path from .env, if not exits. Used default path.
 tesseract_path = os.getenv("TESSERACT_PATH", r"C:\Program Files\Tesseract-OCR\tesseract.exe")
 pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
@@ -34,7 +33,7 @@ class OCREngine:
         """Fail fast if Tesseract is not installed."""
         if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
             logger.error(f"❌ Tesseract not found at: {pytesseract.pytesseract.tesseract_cmd}")
-            logger.error(f"   Check → TESSERACT_PATH in .env")
+            logger.error("   Check → TESSERACT_PATH in .env")
             raise EnvironmentError("Tesseract not installed or path is wrong")
         logger.info("✅ Tesseract found")
 

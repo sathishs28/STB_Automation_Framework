@@ -18,7 +18,7 @@ class Menu:
 
     def invoke_menu(self, repeat=3):
 
-        for i in range(repeat):
+        for _ in range(repeat):
             self.remote.menu(delay=1)
             menu_frame = self.ctx.backend.grab_frame()
             menu_template_path = f"{self.ctx.templates_path}/{self.ctx.config.get('ui_templates.menu')}"
