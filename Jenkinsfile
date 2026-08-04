@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        // SonarQube config
-        SONARQUBE_SERVER = 'SonarQube-Server'     // Must match name in Jenkins > Configure System
-        SONAR_PROJECT_KEY = 'STB_Automation_Framework_Code_Review'       // Your SonarQube project key
-        SONAR_PROJECT_NAME = 'STB_Automation_Framework_Code_Review'      // Display name in SonarQube
+        SONARQUBE_SERVER = 'SonarQube-Server'
+        SONAR_PROJECT_KEY = 'STB_Automation_Framework'
+        SONAR_PROJECT_NAME = 'STB Automation Framework'
+        SCANNER_HOME = tool 'SonarQube-Scanner'
     }
 
     triggers {
@@ -22,33 +22,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "Branch: ${env.BRANCH_NAME}"
-                echo "Commit: ${env.GIT_COMMIT}"
-            }
-        }
-
-        stage('Build & Compile') {
-            steps {
-                // For Maven projects
-                sh 'mvn clean compile -DskipTests'
-
-                // For Gradle projects, use:
-                // sh './gradlew clean compileJava'
-
-                // For Node.js projects, use:
-                // sh 'npm install && npm run build'
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                sh 'mvn test'
-                // For Gradle: sh './gradlew test'
-            }
-            post {
-                always {
-                    junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
-                }
+                echo "Commit: ${env.GIT_COMMIT?.take(7)}"
             }
         }
 
@@ -56,10 +30,12 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube-Server') {
                     sh """
-                        mvn sonar:sonar \
+                        ${SCANNER_HOME}/bin/sonar-scanner \
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                         -Dsonar.projectName="${SONAR_PROJECT_NAME}" \
-                        -Dsonar.java.binaries=target/classes
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                        -Dsonar.login=${env.SONAR_AUTH_TOKEN}
                     """
                 }
             }
@@ -85,20 +61,18 @@ pipeline {
                 body: """
                 <html>
                 <body style="font-family: Arial, sans-serif;">
-                    <h2 style="color: green;">Build Successful</h2>
+                    <h2 style="color: green;">SonarQube Scan Successful</h2>
                     <table border="1" cellpadding="8" style="border-collapse: collapse;">
                         <tr><td><b>Project</b></td><td>${env.JOB_NAME}</td></tr>
                         <tr><td><b>Build #</b></td><td>${env.BUILD_NUMBER}</td></tr>
-                        <tr><td><b>Branch</b></td><td>${env.BRANCH_NAME}</td></tr>
                         <tr><td><b>Commit</b></td><td>${env.GIT_COMMIT?.take(7)}</td></tr>
-                        <tr><td><b>Duration</b></td><td>${currentBuild.durationString}</td></tr>
                     </table>
-                    <p><b>SonarQube Report:</b> <a href="http://192.168.0.193:9000/dashboard?id=${SONAR_PROJECT_KEY}">View Dashboard</a></p>
+                    <p><b>SonarQube Report:</b> <a href="${env.SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}">View Dashboard</a></p>
                     <p><b>Build Console:</b> <a href="${env.BUILD_URL}console">View Logs</a></p>
                 </body>
                 </html>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'ovt.bangalore@gmail.com'}",
+                to: 'ovt.bangalore@gmail.com',
                 from: 'sathish.s@vimatch.in',
                 mimeType: 'text/html',
                 attachLog: true
@@ -111,16 +85,12 @@ pipeline {
                 body: """
                 <html>
                 <body style="font-family: Arial, sans-serif;">
-                    <h2 style="color: red;">Build Failed</h2>
-                    <p>The build failed during the pipeline execution.</p>
-                    <p><b>Project:</b> ${env.JOB_NAME}</p>
-                    <p><b>Build #:</b> ${env.BUILD_NUMBER}</p>
-                    <p><b>Failed Stage:</b> ${env.STAGE_NAME}</p>
+                    <h2 style="color: red;">Scan Failed</h2>
                     <p><b>Console Output:</b> <a href="${env.BUILD_URL}console">Click here to view logs</a></p>
                 </body>
                 </html>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'ovt.bangalore@gmail.com'}",
+                to: 'ovt.bangalore@gmail.com',
                 from: 'sathish.s@vimatch.in',
                 mimeType: 'text/html',
                 attachLog: true
@@ -134,14 +104,11 @@ pipeline {
                 <html>
                 <body style="font-family: Arial, sans-serif;">
                     <h2 style="color: orange;">SonarQube Quality Gate Failed</h2>
-                    <p>The build passed but did not meet the SonarQube quality standards.</p>
-                    <p><b>Project:</b> ${env.JOB_NAME}</p>
-                    <p><b>Build #:</b> ${env.BUILD_NUMBER}</p>
-                    <p><b>SonarQube Dashboard:</b> <a href="http://192.168.1.50:9000/dashboard?id=${SONAR_PROJECT_KEY}">View Issues</a></p>
+                    <p>Code did not meet quality standards. <a href="${env.SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}">View Issues</a></p>
                 </body>
                 </html>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'ovt.bangalore@gmail.com'}",
+                to: 'ovt.bangalore@gmail.com',
                 from: 'sathish.s@vimatch.in',
                 mimeType: 'text/html'
             )
