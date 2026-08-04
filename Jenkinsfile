@@ -120,8 +120,8 @@ pipeline {
                 </body>
                 </html>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'your-email@example.com'}",
-                from: 'jenkins@local.network',
+                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'ovt.bangalore@gmail.com'}",
+                from: 'sathish.s@vimatch.in',
                 mimeType: 'text/html',
                 attachLog: true
             )
@@ -141,8 +141,8 @@ pipeline {
                 </body>
                 </html>
                 """,
-                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'your-email@example.com'}",
-                from: 'jenkins@local.network',
+                to: "${env.CHANGE_AUTHOR_EMAIL ?: 'ovt.bangalore@gmail.com'}",
+                from: 'sathish.s@vimatch.in',
                 mimeType: 'text/html'
             )
         }
