@@ -252,7 +252,5 @@ class AVQualityChecker:
             logger.info(f"✅ Video is moving. Motion Score={motion_score:.4f}")
         else:
             logger.warning(f"⚠️ Frozen frame detected, Motion Score={motion_score:.4f}")
-            # cv2.imwrite(f"evidence/motion_detect_previous_frame.png", previous_frame)
-            # cv2.imwrite(f"evidence/motion_detect_current_frame.png", current_frame)
         return status, motion_score
 
