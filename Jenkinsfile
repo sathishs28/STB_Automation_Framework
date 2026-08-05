@@ -65,6 +65,14 @@ pipeline {
             }
         }
 
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
         stage('Fetch SonarQube Report Data') {
             steps {
                 script {
@@ -127,14 +135,6 @@ pipeline {
                         echo "WARNING: Could not fetch SonarQube metrics: ${e.message}"
                         // Defaults remain
                     }
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
                 }
             }
         }
