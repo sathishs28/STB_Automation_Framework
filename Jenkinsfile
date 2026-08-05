@@ -206,6 +206,8 @@ pipeline {
                 }
             }
         }
+    }
+    
     post {
         always {
             script {
