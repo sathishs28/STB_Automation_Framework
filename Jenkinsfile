@@ -94,13 +94,12 @@ pipeline {
                                 script: """
                                     curl -s -u ${env.SONAR_AUTH_TOKEN}: \
                                     "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
-                                    echo "========== RAW SONAR RESPONSE =========="
-                                    echo metricsResponse
-                                    echo "========================================"
                                 """,
                                 returnStdout: true
                             ).trim()
-                            
+                            echo "========== RAW SONAR RESPONSE =========="
+                            echo metricsResponse
+                            echo "========================================"
 
                             def metricsJson = readJSON text: metricsResponse
                             def measures = metricsJson.component.measures
