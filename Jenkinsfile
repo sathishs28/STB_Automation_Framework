@@ -171,16 +171,18 @@ pipeline {
                         env.SONAR_MAJOR = severityMap['MAJOR'] ?: '0'
                         env.SONAR_MINOR = severityMap['MINOR'] ?: '0'
                         env.SONAR_INFO = severityMap['INFO'] ?: '0'
+                    
+                    }   // <-- close withSonarQubeEnv
 
                     } catch (Exception e) {
                         echo "WARNING: Could not fetch SonarQube metrics: ${e.message}"
                         // Defaults remain
-                    }
-                        
-                }
-            }
-        }
-    }
+                    
+                    }   // <-- close catch
+                }   // <-- close script
+            }   // <-- close steps
+        }   // close stage 'Fetch SonarQube Report Data'   
+    }   // <-- close stages      
 
     post {
         always {
@@ -416,5 +418,4 @@ pipeline {
             cleanWs()
         }
     }
-}
 }
