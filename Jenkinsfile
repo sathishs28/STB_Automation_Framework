@@ -58,8 +58,6 @@ pipeline {
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                         -Dsonar.projectName="${SONAR_PROJECT_NAME}" \
                         -Dsonar.sources=. \
-                        -Dsonar.tests=tests
-                        -Dsonar.python.coverage.reportPaths=coverage.xml
                         -Dsonar.host.url=${env.SONAR_HOST_URL} \
                         -Dsonar.token=${env.SONAR_AUTH_TOKEN}
                     """
