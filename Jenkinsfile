@@ -58,6 +58,8 @@ pipeline {
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                         -Dsonar.projectName="${SONAR_PROJECT_NAME}" \
                         -Dsonar.sources=. \
+                        -Dsonar.tests=tests
+                        -Dsonar.python.coverage.reportPaths=coverage.xml
                         -Dsonar.host.url=${env.SONAR_HOST_URL} \
                         -Dsonar.token=${env.SONAR_AUTH_TOKEN}
                     """
@@ -164,6 +166,20 @@ pipeline {
 
                         severityFacet?.values?.each {
                             severityMap[it.val] = it.count
+                        }
+
+                        def issueResponse = sh(
+                            script: """
+                            curl -s -u ${env.SONAR_AUTH_TOKEN}: \
+                            "${SONAR_HOST}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&facets=severities&ps=1"
+                            """,
+                            returnStdout: true
+                        )
+
+                        def issueJson = readJSON text: issueResponse
+
+                        def severityFacet = issueJson.facets.find {
+                            it.property == "severities"
                         }
 
                         env.SONAR_BLOCKER = severityMap['BLOCKER'] ?: '0'
