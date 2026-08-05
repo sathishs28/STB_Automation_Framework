@@ -23,7 +23,8 @@ pipeline {
         SONAR_NEW_VULNERABILITIES = '0'
         SONAR_NEW_CODE_SMELLS = '0'
         SONAR_NEW_HOTSPOTS = '0'
-
+        SONAR_NEW_COVERAGE = '0.0'
+        
         // Severity breakdown
         SONAR_BLOCKER = '0'
         SONAR_CRITICAL = '0'
@@ -94,7 +95,7 @@ pipeline {
                                 script: """
                                     curl --silent --show-error \
                                         -u ${env.SONAR_AUTH_TOKEN}: \
-                                        "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
+                                        "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
                                 """,
                                 returnStdout: true
                             ).trim()
@@ -114,7 +115,9 @@ pipeline {
                             def metricMap = [:]
 
                             metricsJson.component.measures.each { measure ->
-                                metricMap[measure.metric] = measure.value ?: measure.period?.value ?: "N/A"
+                                // New metrics come in "periods" array, not "period"
+                                def periodValue = measure.periods?.find { it.index == 1 }?.value
+                                metricMap[measure.metric] = measure.value ?: periodValue ?: "N/A"
                             }
 
                             // Console Summary
@@ -160,44 +163,49 @@ pipeline {
                             echo "New Coverage     : ${env.SONAR_NEW_COVERAGE}%"
                             echo "==================================="
 
-                        def severityMap = [:]
+                            // 2. Fetch Severity Breakdown
+                            def issueResponse = sh(
+                                script: """
+                                    curl -s -u ${env.SONAR_AUTH_TOKEN}: \
+                                    "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
+                                """,
+                                returnStdout: true
+                            ).trim()
 
-                        severityFacet?.values?.each {
-                            severityMap[it.val] = it.count
+                            def issueJson = readJSON text: issueResponse
+
+                            def severityFacet = issueJson.facets.find {
+                                it.property == "severities"
+                            }
+
+                            def severityMap = [:]
+                            severityFacet?.values?.each {
+                                severityMap[it.val] = it.count
+                            }
+
+                            env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
+                            env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
+                            env.SONAR_MAJOR    = severityMap['MAJOR'] ?: '0'
+                            env.SONAR_MINOR    = severityMap['MINOR'] ?: '0'
+                            env.SONAR_INFO     = severityMap['INFO'] ?: '0'
+
+                            echo ""
+                            echo "========== SEVERITY BREAKDOWN =========="
+                            echo "Blocker  : ${env.SONAR_BLOCKER}"
+                            echo "Critical : ${env.SONAR_CRITICAL}"
+                            echo "Major    : ${env.SONAR_MAJOR}"
+                            echo "Minor    : ${env.SONAR_MINOR}"
+                            echo "Info     : ${env.SONAR_INFO}"
+                            echo "========================================"
                         }
-
-                        def issueResponse = sh(
-                            script: """
-                            curl -s -u ${env.SONAR_AUTH_TOKEN}: \
-                            "${SONAR_HOST}/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&facets=severities&ps=1"
-                            """,
-                            returnStdout: true
-                        )
-
-                        def issueJson = readJSON text: issueResponse
-
-                        def severityFacet = issueJson.facets.find {
-                            it.property == "severities"
-                        }
-
-                        env.SONAR_BLOCKER = severityMap['BLOCKER'] ?: '0'
-                        env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
-                        env.SONAR_MAJOR = severityMap['MAJOR'] ?: '0'
-                        env.SONAR_MINOR = severityMap['MINOR'] ?: '0'
-                        env.SONAR_INFO = severityMap['INFO'] ?: '0'
-                    
-                    }   // <-- close withSonarQubeEnv
 
                     } catch (Exception e) {
                         echo "WARNING: Could not fetch SonarQube metrics: ${e.message}"
                         // Defaults remain
-                    
-                    }   // <-- close catch
-                }   // <-- close script
-            }   // <-- close steps
-        }   // close stage 'Fetch SonarQube Report Data'   
-    }   // <-- close stages      
-
+                    }
+                }
+            }
+        }
     post {
         always {
             script {
