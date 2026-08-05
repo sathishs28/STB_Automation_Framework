@@ -42,74 +42,37 @@ pipeline {
             }
         }
 
-        stage('Wait for Analysis Processing') {
-            steps {
-                sleep(time: 10, unit: 'SECONDS')
-            }
-        }
-
         stage('Fetch SonarQube Metrics') {
             steps {
-                // CRITICAL: withSonarQubeEnv provides SONAR_AUTH_TOKEN
-                withSonarQubeEnv('SonarQube-Server') {
-                    script {
-                        // Build API URL (quote it for shell safety)
-                        def apiUrl = "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots"
-                        
-                        echo "Fetching metrics from: ${apiUrl}"
-                        echo "Token available: ${env.SONAR_AUTH_TOKEN ? 'YES' : 'NO'}"
-
-                        // Write URL to file to avoid shell escaping issues with &
-                        writeFile file: 'api_url.txt', text: apiUrl
-
-                        def response = sh(
+                script {
+                    try {
+                        // Fetch key metrics from SonarQube API
+                        def metricsResponse = sh(
                             script: """
-                                curl -s -w "\\nHTTP_CODE:%{http_code}" \
-                                -u "${env.SONAR_AUTH_TOKEN}:" \
-                                "\$(cat api_url.txt)"
+                                curl -s -u ${env.SONAR_AUTH_TOKEN}: \
+                                "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,reliability_rating,security_rating,sqale_rating"
                             """,
                             returnStdout: true
                         ).trim()
 
-                        // Parse response
-                        def parts = response.split("\nHTTP_CODE:")
-                        def body = parts.size() > 1 ? parts[0] : ""
-                        def httpCode = parts.size() > 1 ? parts[1] : "000"
-                        
-                        echo "HTTP Status: ${httpCode}"
-                        echo "Raw Response: ${body.take(500)}"
+                        // Parse JSON response
+                        def json = readJSON text: metricsResponse
+                        def measures = json.component.measures
 
-                        if (httpCode == "200" && body) {
-                            try {
-                                def json = new groovy.json.JsonSlurper().parseText(body)
-                                def measures = json?.component?.measures ?: []
-                                
-                                echo "Found ${measures.size()} measures"
+                        // Extract individual metrics
+                        env.SONAR_BUGS = measures.find { it.metric == 'bugs' }?.value ?: '0'
+                        env.SONAR_VULNERABILITIES = measures.find { it.metric == 'vulnerabilities' }?.value ?: '0'
+                        env.SONAR_CODE_SMELLS = measures.find { it.metric == 'code_smells' }?.value ?: '0'
+                        env.SONAR_COVERAGE = measures.find { it.metric == 'coverage' }?.value ?: '0.0'
+                        env.SONAR_DUPLICATION = measures.find { it.metric == 'duplicated_lines_density' }?.value ?: '0.0'
+                        env.SONAR_LINES = measures.find { it.metric == 'ncloc' }?.value ?: '0'
+                        env.SONAR_STATUS = measures.find { it.metric == 'alert_status' }?.value ?: 'UNKNOWN'
+                        env.SONAR_HOTSPOTS = measures.find { it.metric == 'security_hotspots' }?.value ?: '0'
 
-                                def getMetric = { name ->
-                                    def m = measures.find { it.metric == name }
-                                    return m?.value ?: '0'
-                                }
-
-                                env.SONAR_BUGS = getMetric('bugs')
-                                env.SONAR_VULNERABILITIES = getMetric('vulnerabilities')
-                                env.SONAR_CODE_SMELLS = getMetric('code_smells')
-                                env.SONAR_COVERAGE = getMetric('coverage')
-                                env.SONAR_DUPLICATION = getMetric('duplicated_lines_density')
-                                env.SONAR_LINES = getMetric('ncloc')
-                                env.SONAR_STATUS = getMetric('alert_status')
-                                env.SONAR_HOTSPOTS = getMetric('security_hotspots')
-
-                                echo "Bugs=${env.SONAR_BUGS}, Vulns=${env.SONAR_VULNERABILITIES}, Smells=${env.SONAR_CODE_SMELLS}, Coverage=${env.SONAR_COVERAGE}%"
-
-                            } catch (Exception e) {
-                                echo "JSON parse error: ${e.message}"
-                                setDefaultMetrics()
-                            }
-                        } else {
-                            echo "API failed: HTTP ${httpCode}"
-                            setDefaultMetrics()
-                        }
+                        echo "Metrics fetched: Bugs=${env.SONAR_BUGS}, Vulnerabilities=${env.SONAR_VULNERABILITIES}, Status=${env.SONAR_STATUS}"
+                    } catch (Exception e) {
+                        echo "WARNING: Could not fetch metrics from SonarQube API: ${e.message}"
+                        // Keep default values
                     }
                 }
             }
@@ -255,16 +218,4 @@ pipeline {
             cleanWs()
         }
     }
-}
-
-def setDefaultMetrics() {
-    env.SONAR_BUGS = '0'
-    env.SONAR_VULNERABILITIES = '0'
-    env.SONAR_CODE_SMELLS = '0'
-    env.SONAR_COVERAGE = '0.0'
-    env.SONAR_DUPLICATION = '0.0'
-    env.SONAR_LINES = '0'
-    env.SONAR_STATUS = 'ERROR'
-    env.SONAR_HOTSPOTS = '0'
-    echo "Default metrics set due to API failure"
 }
