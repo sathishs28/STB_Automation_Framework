@@ -9,7 +9,7 @@ from src.navigators.menu import Menu
 # Validators Packages
 from src.validators.boot import Boot
 from src.validators.live_tv import LiveTV
-from src.validators.av import AV
+from src.validators.lcn import LCN
 
 
 
@@ -70,6 +70,7 @@ class STB:
         # Validators
         self.boot = Boot(self.ctx)
         self.live_tv = LiveTV(self.ctx)
+        self.lcn = LCN(self.ctx)
         
         
         
