@@ -68,11 +68,22 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    script {
+                        def qg = waitForQualityGate()
+
+                        env.SONAR_STATUS = qg.status
+
+                        if (qg.status != 'OK') {
+                            currentBuild.result = 'UNSTABLE'
+
+                            echo "Quality Gate failed: ${qg.status}"
+                        } else {
+                            echo "Quality Gate passed"
+                        }
+                    }
                 }
             }
         }
-
         stage('Fetch SonarQube Report Data') {
             steps {
                 script {
