@@ -7,16 +7,6 @@ pipeline {
         SONAR_PROJECT_NAME = 'STB Automation Framework'
         SCANNER_HOME = tool 'SonarQube-Scanner'
         SONAR_HOST = 'http://192.168.0.5:9000'
-        
-        // Default values in case metrics fetch fails
-        SONAR_BUGS = 'N/A'
-        SONAR_VULNERABILITIES = 'N/A'
-        SONAR_CODE_SMELLS = 'N/A'
-        SONAR_COVERAGE = 'N/A'
-        SONAR_DUPLICATION = 'N/A'
-        SONAR_LINES = 'N/A'
-        SONAR_STATUS = 'UNKNOWN'
-        SONAR_HOTSPOTS = 'N/A'
     }
 
     triggers {
@@ -52,37 +42,74 @@ pipeline {
             }
         }
 
+        stage('Wait for Analysis Processing') {
+            steps {
+                sleep(time: 10, unit: 'SECONDS')
+            }
+        }
+
         stage('Fetch SonarQube Metrics') {
             steps {
-                script {
-                    try {
-                        // Fetch key metrics from SonarQube API
-                        def metricsResponse = sh(
+                // CRITICAL: withSonarQubeEnv provides SONAR_AUTH_TOKEN
+                withSonarQubeEnv('SonarQube-Server') {
+                    script {
+                        // Build API URL (quote it for shell safety)
+                        def apiUrl = "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots"
+                        
+                        echo "Fetching metrics from: ${apiUrl}"
+                        echo "Token available: ${env.SONAR_AUTH_TOKEN ? 'YES' : 'NO'}"
+
+                        // Write URL to file to avoid shell escaping issues with &
+                        writeFile file: 'api_url.txt', text: apiUrl
+
+                        def response = sh(
                             script: """
-                                curl -s -u ${env.SONAR_AUTH_TOKEN}: \
-                                "${SONAR_HOST}/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,reliability_rating,security_rating,sqale_rating"
+                                curl -s -w "\\nHTTP_CODE:%{http_code}" \
+                                -u "${env.SONAR_AUTH_TOKEN}:" \
+                                "\$(cat api_url.txt)"
                             """,
                             returnStdout: true
                         ).trim()
 
-                        // Parse JSON response
-                        def json = readJSON text: metricsResponse
-                        def measures = json.component.measures
+                        // Parse response
+                        def parts = response.split("\nHTTP_CODE:")
+                        def body = parts.size() > 1 ? parts[0] : ""
+                        def httpCode = parts.size() > 1 ? parts[1] : "000"
+                        
+                        echo "HTTP Status: ${httpCode}"
+                        echo "Raw Response: ${body.take(500)}"
 
-                        // Extract individual metrics
-                        env.SONAR_BUGS = measures.find { it.metric == 'bugs' }?.value ?: '0'
-                        env.SONAR_VULNERABILITIES = measures.find { it.metric == 'vulnerabilities' }?.value ?: '0'
-                        env.SONAR_CODE_SMELLS = measures.find { it.metric == 'code_smells' }?.value ?: '0'
-                        env.SONAR_COVERAGE = measures.find { it.metric == 'coverage' }?.value ?: '0.0'
-                        env.SONAR_DUPLICATION = measures.find { it.metric == 'duplicated_lines_density' }?.value ?: '0.0'
-                        env.SONAR_LINES = measures.find { it.metric == 'ncloc' }?.value ?: '0'
-                        env.SONAR_STATUS = measures.find { it.metric == 'alert_status' }?.value ?: 'UNKNOWN'
-                        env.SONAR_HOTSPOTS = measures.find { it.metric == 'security_hotspots' }?.value ?: '0'
+                        if (httpCode == "200" && body) {
+                            try {
+                                def json = new groovy.json.JsonSlurper().parseText(body)
+                                def measures = json?.component?.measures ?: []
+                                
+                                echo "Found ${measures.size()} measures"
 
-                        echo "Metrics fetched: Bugs=${env.SONAR_BUGS}, Vulnerabilities=${env.SONAR_VULNERABILITIES}, Status=${env.SONAR_STATUS}"
-                    } catch (Exception e) {
-                        echo "WARNING: Could not fetch metrics from SonarQube API: ${e.message}"
-                        // Keep default values
+                                def getMetric = { name ->
+                                    def m = measures.find { it.metric == name }
+                                    return m?.value ?: '0'
+                                }
+
+                                env.SONAR_BUGS = getMetric('bugs')
+                                env.SONAR_VULNERABILITIES = getMetric('vulnerabilities')
+                                env.SONAR_CODE_SMELLS = getMetric('code_smells')
+                                env.SONAR_COVERAGE = getMetric('coverage')
+                                env.SONAR_DUPLICATION = getMetric('duplicated_lines_density')
+                                env.SONAR_LINES = getMetric('ncloc')
+                                env.SONAR_STATUS = getMetric('alert_status')
+                                env.SONAR_HOTSPOTS = getMetric('security_hotspots')
+
+                                echo "Bugs=${env.SONAR_BUGS}, Vulns=${env.SONAR_VULNERABILITIES}, Smells=${env.SONAR_CODE_SMELLS}, Coverage=${env.SONAR_COVERAGE}%"
+
+                            } catch (Exception e) {
+                                echo "JSON parse error: ${e.message}"
+                                setDefaultMetrics()
+                            }
+                        } else {
+                            echo "API failed: HTTP ${httpCode}"
+                            setDefaultMetrics()
+                        }
                     }
                 }
             }
@@ -100,27 +127,11 @@ pipeline {
     post {
         always {
             script {
-                // Determine build status and colors
                 def buildStatus = currentBuild.currentResult
-                def statusColor
-                def statusText
-                def statusIcon
+                def statusColor = buildStatus == 'SUCCESS' ? '28a745' : (buildStatus == 'UNSTABLE' ? 'fd7e14' : 'dc3545')
+                def statusText = buildStatus == 'SUCCESS' ? 'PASSED' : (buildStatus == 'UNSTABLE' ? 'QUALITY GATE FAILED' : 'FAILED')
+                def statusIcon = buildStatus == 'SUCCESS' ? '✅' : (buildStatus == 'UNSTABLE' ? '⚠️' : '❌')
 
-                if (buildStatus == 'SUCCESS') {
-                    statusColor = '28a745'      // Green
-                    statusText = 'PASSED'
-                    statusIcon = '✅'
-                } else if (buildStatus == 'UNSTABLE') {
-                    statusColor = 'fd7e14'      // Orange
-                    statusText = 'QUALITY GATE FAILED'
-                    statusIcon = '⚠️'
-                } else {
-                    statusColor = 'dc3545'      // Red
-                    statusText = 'FAILED'
-                    statusIcon = '❌'
-                }
-
-                // Send the report email regardless of status
                 emailext (
                     subject: "${statusIcon} SonarQube Report: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${statusText}",
                     body: """
@@ -236,7 +247,7 @@ pipeline {
                     </html>
                     """,
                     to: 'ovt.bangalore@gmail.com',
-                    from: 'jenkins@local.network',
+                    from: 'sathish.s@vimatch.in',
                     mimeType: 'text/html',
                     attachLog: true
                 )
@@ -244,4 +255,16 @@ pipeline {
             cleanWs()
         }
     }
+}
+
+def setDefaultMetrics() {
+    env.SONAR_BUGS = '0'
+    env.SONAR_VULNERABILITIES = '0'
+    env.SONAR_CODE_SMELLS = '0'
+    env.SONAR_COVERAGE = '0.0'
+    env.SONAR_DUPLICATION = '0.0'
+    env.SONAR_LINES = '0'
+    env.SONAR_STATUS = 'ERROR'
+    env.SONAR_HOTSPOTS = '0'
+    echo "Default metrics set due to API failure"
 }
