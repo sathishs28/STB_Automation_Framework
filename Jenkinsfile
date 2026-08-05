@@ -236,7 +236,7 @@ pipeline {
                     </html>
                     """,
                     to: 'ovt.bangalore@gmail.com',
-                    from: 'jenkins@local.network',
+                    from: 'sathish.s@vimatch.in',
                     mimeType: 'text/html',
                     attachLog: true
                 )
