@@ -3,6 +3,7 @@
 import time
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from backends.base import IR_DeviceInterface
 from backends.key_maps.OVT_NXT_Digital_Remote import KEY_MAP
@@ -21,8 +22,8 @@ class DeviceInfo:
     is_connected : bool
     device_id    : str
     dataset      : str
-    firmware     : str = None
-    capture_res  : tuple = None
+    firmware     : Optional[str] = None
+    capture_res  : Optional[tuple] = None
 
 
 class IR_Backend(IR_DeviceInterface):
