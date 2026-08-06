@@ -310,6 +310,13 @@ pipeline {
                         // ASSIGN ALL ENV VARS OUTSIDE withSonarQubeEnv BLOCK
                         echo ""
                         echo "========== PERSISTING TO ENV VARS ==========="
+                        echo "DEBUG: sonarData map = ${sonarData}"
+                        echo "DEBUG: sonarData.bugs = ${sonarData.bugs}"
+                        echo "DEBUG: sonarData.codeSmells = ${sonarData.codeSmells}"
+                        echo "DEBUG: severityData map = ${severityData}"
+                        echo "DEBUG: severityData.BLOCKER = ${severityData.BLOCKER}"
+                        echo "DEBUG: severityData.MAJOR = ${severityData.MAJOR}"
+                        echo ""
                         env.SONAR_BUGS = sonarData.bugs ?: '0'
                         env.SONAR_VULNERABILITIES = sonarData.vulnerabilities ?: '0'
                         env.SONAR_CODE_SMELLS = sonarData.codeSmells ?: '0'
