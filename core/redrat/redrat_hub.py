@@ -85,7 +85,7 @@ class RedRatHubManager:
             logger.info(f"RedRatHub already available at {self.hub_url}")
             logger.info("RedRatHub process was not started by this framework run and will not be stopped automatically.")
             self._started_by_manager = False
-            return True
+            return False
 
         if not self.exe_path.exists():
             raise FileNotFoundError(f"RedRatHub.exe not found at {self.exe_path}")
@@ -125,7 +125,8 @@ class RedRatHubManager:
                 return True
             time.sleep(1)
 
-        raise RuntimeError(f"RedRatHub did not become available within {wait_seconds} seconds")
+        logger.error(f"RedRatHub did not become available within {wait_seconds} seconds")
+        return False
 
     def stop(self):
         if not self._started_by_manager:
@@ -145,5 +146,3 @@ class RedRatHubManager:
 
         self._process = None
         self._started_by_manager = False
-
-
