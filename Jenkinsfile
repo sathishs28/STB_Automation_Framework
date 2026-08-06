@@ -217,13 +217,32 @@ pipeline {
                             ).trim()
 
                             def issueJson = readJSON text: issueResponse, returnPojo: true
+
+                            echo ""
+                            echo "========== RAW ISSUE RESPONSE =========="
+                            echo issueResponse
+                            echo "========================================"
+
                             def severityFacet = issueJson.facets?.find {
                                 it.property == "severities"
                             }
 
                             def severityMap = [:]
-                            severityFacet?.values?.each {
-                                severityMap[it.val] = it.count
+                            if (severityFacet?.values) {
+                                severityFacet.values.each { entry ->
+                                    def severityKey = entry.val ?: entry.value ?: entry.key
+                                    def countValue = entry.count ?: entry.c
+                                    if (severityKey) {
+                                        severityMap[severityKey] = countValue != null ? countValue.toString() : '0'
+                                    }
+                                }
+                            } else if (issueJson.issues) {
+                                issueJson.issues.each { issue ->
+                                    def severity = issue.severity ?: issue.sev
+                                    if (severity) {
+                                        severityMap[severity] = ((severityMap[severity] ?: '0').toInteger() + 1).toString()
+                                    }
+                                }
                             }
 
                             env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
@@ -291,6 +310,28 @@ pipeline {
                 if (totalNewIssues > 0) {
                     newIssuesAlert = "<div class='alert-new-issues'><strong>New Issues Detected:</strong> ${totalNewIssues} new issue(s) found in this commit. Please review before merging.</div>"
                 }
+
+                def safeValue = { value, fallback = 'N/A' ->
+                    value == null || value == '' ? fallback : value.toString()
+                }
+
+                def summaryRowsHtml = [
+                    ['Quality Gate', safeValue(env.SONAR_STATUS, 'UNKNOWN')],
+                    ['Coverage', "${safeValue(env.SONAR_COVERAGE, '0.0')}%"],
+                    ['Code Smells', safeValue(env.SONAR_CODE_SMELLS, '0')],
+                    ['Bugs', safeValue(env.SONAR_BUGS, '0')],
+                    ['Vulnerabilities', safeValue(env.SONAR_VULNERABILITIES, '0')],
+                    ['Hotspots', safeValue(env.SONAR_HOTSPOTS, '0')],
+                    ['LOC', safeValue(env.SONAR_LINES, '0')],
+                    ['Duplication', "${safeValue(env.SONAR_DUPLICATION, '0.0')}%"],
+                    ['New Bugs', safeValue(env.SONAR_NEW_BUGS, '0')],
+                    ['New Vulnerabilities', safeValue(env.SONAR_NEW_VULNERABILITIES, '0')],
+                    ['New Code Smells', safeValue(env.SONAR_NEW_CODE_SMELLS, '0')],
+                    ['New Hotspots', safeValue(env.SONAR_NEW_HOTSPOTS, '0')],
+                    ['New Coverage', "${safeValue(env.SONAR_NEW_COVERAGE, '0.0')}%"],
+                ].collect { row ->
+                    "<tr><td>${row[0]}</td><td><strong>${row[1]}</strong></td></tr>"
+                }.join('')
 
                 // Send comprehensive email report
                 emailext (
@@ -398,37 +439,42 @@ pipeline {
                                     </div>
                                 </div>
 
+                                <h3>Final Summary</h3>
+                                <table class="info">
+                                    ${summaryRowsHtml}
+                                </table>
+
                                 <h3>Overall Code Quality Metrics</h3>
                                 <div class="summary">
                                     <div class="metric-box bugs">
-                                        <div class="metric-value">${env.SONAR_BUGS}</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_BUGS, '0')}</div>
                                         <div class="metric-label">Total Bugs</div>
                                     </div>
                                     <div class="metric-box vulns">
-                                        <div class="metric-value">${env.SONAR_VULNERABILITIES}</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_VULNERABILITIES, '0')}</div>
                                         <div class="metric-label">Total Vulnerabilities</div>
                                     </div>
                                     <div class="metric-box smells">
-                                        <div class="metric-value">${env.SONAR_CODE_SMELLS}</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_CODE_SMELLS, '0')}</div>
                                         <div class="metric-label">Total Code Smells</div>
                                     </div>
                                     <div class="metric-box coverage">
-                                        <div class="metric-value">${env.SONAR_COVERAGE}%</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_COVERAGE, '0.0')}%</div>
                                         <div class="metric-label">Coverage</div>
                                     </div>
                                 </div>
 
                                 <div class="summary">
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${env.SONAR_HOTSPOTS}</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_HOTSPOTS, '0')}</div>
                                         <div class="metric-label">Security Hotspots</div>
                                     </div>
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${env.SONAR_DUPLICATION}%</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_DUPLICATION, '0.0')}%</div>
                                         <div class="metric-label">Duplication</div>
                                     </div>
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${env.SONAR_LINES}</div>
+                                        <div class="metric-value">${safeValue(env.SONAR_LINES, '0')}</div>
                                         <div class="metric-label">Lines of Code</div>
                                     </div>
                                 </div>
