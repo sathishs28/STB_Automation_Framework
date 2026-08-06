@@ -90,10 +90,26 @@ pipeline {
                 script {
                     try {
                         withSonarQubeEnv('SonarQube-Server') {
+                            def getMetricValue = { measures, metricName, fallback = '0' ->
+                                def measure = measures.find { it.metric == metricName }
+                                if (!measure) {
+                                    return fallback
+                                }
+
+                                def rawValue = measure.value
+                                if (rawValue == null || rawValue == '') {
+                                    def period = measure.periods?.find { it.index == 1 } ?: measure.periods?.first()
+                                    rawValue = period?.value
+                                }
+
+                                return (rawValue == null || rawValue == '') ? fallback : rawValue.toString()
+                            }
+
                             // 1. Fetch Overall + New Metrics
                             def metricsResponse = sh(
                                 script: """
-                                    curl --silent --show-error \
+                                    curl --fail --silent --show-error \
+                                        -H 'Accept: application/json' \
                                         -u ${env.SONAR_AUTH_TOKEN}: \
                                         "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
                                 """,
@@ -105,19 +121,22 @@ pipeline {
                             echo "========================================"
 
                             // Parse JSON
-                            def metricsJson = readJSON text: metricsResponse
+                            def metricsJson = readJSON text: metricsResponse, returnPojo: true
+                            def measures = metricsJson.component?.measures ?: []
 
-                            if (!metricsJson.component?.measures) {
+                            if (measures.isEmpty()) {
                                 error("SonarQube API did not return any measures.")
                             }
 
                             // Build metric map
                             def metricMap = [:]
-
-                            metricsJson.component.measures.each { measure ->
-                                // New metrics come in "periods" array, not "period"
-                                def periodValue = measure.periods?.find { it.index == 1 }?.value
-                                metricMap[measure.metric] = measure.value ?: periodValue ?: "N/A"
+                            measures.each { measure ->
+                                def rawValue = measure.value
+                                if (rawValue == null || rawValue == '') {
+                                    def period = measure.periods?.find { it.index == 1 } ?: measure.periods?.first()
+                                    rawValue = period?.value
+                                }
+                                metricMap[measure.metric] = (rawValue == null || rawValue == '') ? '0' : rawValue.toString()
                             }
 
                             // Console Summary
@@ -129,21 +148,21 @@ pipeline {
                             echo "==================================="
 
                             // Overall Metrics
-                            env.SONAR_BUGS            = metricMap['bugs'] ?: '0'
-                            env.SONAR_VULNERABILITIES = metricMap['vulnerabilities'] ?: '0'
-                            env.SONAR_CODE_SMELLS     = metricMap['code_smells'] ?: '0'
-                            env.SONAR_COVERAGE        = metricMap['coverage'] ?: '0.0'
-                            env.SONAR_DUPLICATION     = metricMap['duplicated_lines_density'] ?: '0.0'
-                            env.SONAR_LINES           = metricMap['ncloc'] ?: '0'
-                            env.SONAR_STATUS          = metricMap['alert_status'] ?: 'UNKNOWN'
-                            env.SONAR_HOTSPOTS        = metricMap['security_hotspots'] ?: '0'
+                            env.SONAR_BUGS            = getMetricValue(measures, 'bugs', '0')
+                            env.SONAR_VULNERABILITIES = getMetricValue(measures, 'vulnerabilities', '0')
+                            env.SONAR_CODE_SMELLS     = getMetricValue(measures, 'code_smells', '0')
+                            env.SONAR_COVERAGE        = getMetricValue(measures, 'coverage', '0.0')
+                            env.SONAR_DUPLICATION     = getMetricValue(measures, 'duplicated_lines_density', '0.0')
+                            env.SONAR_LINES           = getMetricValue(measures, 'ncloc', '0')
+                            env.SONAR_STATUS          = getMetricValue(measures, 'alert_status', 'UNKNOWN')
+                            env.SONAR_HOTSPOTS        = getMetricValue(measures, 'security_hotspots', '0')
 
                             // New Code Metrics
-                            env.SONAR_NEW_BUGS            = metricMap['new_bugs'] ?: '0'
-                            env.SONAR_NEW_VULNERABILITIES = metricMap['new_vulnerabilities'] ?: '0'
-                            env.SONAR_NEW_CODE_SMELLS     = metricMap['new_code_smells'] ?: '0'
-                            env.SONAR_NEW_HOTSPOTS        = metricMap['new_security_hotspots'] ?: '0'
-                            env.SONAR_NEW_COVERAGE        = metricMap['new_coverage'] ?: '0.0'
+                            env.SONAR_NEW_BUGS            = getMetricValue(measures, 'new_bugs', '0')
+                            env.SONAR_NEW_VULNERABILITIES = getMetricValue(measures, 'new_vulnerabilities', '0')
+                            env.SONAR_NEW_CODE_SMELLS     = getMetricValue(measures, 'new_code_smells', '0')
+                            env.SONAR_NEW_HOTSPOTS        = getMetricValue(measures, 'new_security_hotspots', '0')
+                            env.SONAR_NEW_COVERAGE        = getMetricValue(measures, 'new_coverage', '0.0')
 
                             // Final Summary
                             echo ""
@@ -166,15 +185,16 @@ pipeline {
                             // 2. Fetch Severity Breakdown
                             def issueResponse = sh(
                                 script: """
-                                    curl -s -u ${env.SONAR_AUTH_TOKEN}: \
-                                    "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
+                                    curl --fail --silent --show-error \
+                                        -H 'Accept: application/json' \
+                                        -u ${env.SONAR_AUTH_TOKEN}: \
+                                        "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
                                 """,
                                 returnStdout: true
                             ).trim()
 
-                            def issueJson = readJSON text: issueResponse
-
-                            def severityFacet = issueJson.facets.find {
+                            def issueJson = readJSON text: issueResponse, returnPojo: true
+                            def severityFacet = issueJson.facets?.find {
                                 it.property == "severities"
                             }
 
