@@ -227,27 +227,42 @@ pipeline {
                                 it.property == "severities"
                             }
 
+                            echo ""
+                            echo "========== DEBUG SEVERITY PARSING =========="
+                            echo "Facets: ${issueJson.facets}"
+                            echo "Severity Facet: ${severityFacet}"
+                            echo "Severity Facet Values: ${severityFacet?.values}"
+                            echo "============================================"
+
                             def severityMap = [:]
                             if (severityFacet?.values) {
+                                echo "Parsing facets values..."
                                 severityFacet.values.each { entry ->
                                     def severityKey = entry.val ?: entry.value ?: entry.key
                                     def countValue = entry.count ?: entry.c
+                                    echo "  Severity: ${severityKey}, Count: ${countValue}"
                                     if (severityKey) {
                                         severityMap[severityKey] = countValue != null ? countValue.toString() : '0'
                                     }
                                 }
+                                echo "Severity Map after facets: ${severityMap}"
                             } else if (issueJson.issues) {
+                                echo "Facets not found, counting from issues array..."
                                 issueJson.issues.each { issue ->
                                     def severity = issue.severity ?: issue.sev
                                     if (severity) {
-                                        severityMap[severity] = ((severityMap[severity] ?: '0').toInteger() + 1).toString()
+                                        def currentCount = severityMap[severity] ?: '0'
+                                        severityMap[severity] = (currentCount.toInteger() + 1).toString()
                                     }
                                 }
+                                echo "Severity Map after issues fallback: ${severityMap}"
                             }
 
-                            env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
-                            env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
-                            env.SONAR_MAJOR    = severityMap['MAJOR'] ?: '0'
+                            env.SONAR_BLOCKER  = (severityMap['BLOCKER'] ?: '0').toString()
+                            env.SONAR_CRITICAL = (severityMap['CRITICAL'] ?: '0').toString()
+                            env.SONAR_MAJOR    = (severityMap['MAJOR'] ?: '0').toString()
+                            env.SONAR_MINOR    = (severityMap['MINOR'] ?: '0').toString()
+                            env.SONAR_INFO     = (severityMap['INFO'] ?: '0').toString()
                             env.SONAR_MINOR    = severityMap['MINOR'] ?: '0'
                             env.SONAR_INFO     = severityMap['INFO'] ?: '0'
 
@@ -447,34 +462,34 @@ pipeline {
                                 <h3>Overall Code Quality Metrics</h3>
                                 <div class="summary">
                                     <div class="metric-box bugs">
-                                        <div class="metric-value">${safeValue(env.SONAR_BUGS, '0')}</div>
+                                        <div class="metric-value">${env.SONAR_BUGS ?: '0'}</div>
                                         <div class="metric-label">Total Bugs</div>
                                     </div>
                                     <div class="metric-box vulns">
-                                        <div class="metric-value">${safeValue(env.SONAR_VULNERABILITIES, '0')}</div>
+                                        <div class="metric-value">${env.SONAR_VULNERABILITIES ?: '0'}</div>
                                         <div class="metric-label">Total Vulnerabilities</div>
                                     </div>
                                     <div class="metric-box smells">
-                                        <div class="metric-value">${safeValue(env.SONAR_CODE_SMELLS, '0')}</div>
+                                        <div class="metric-value">${env.SONAR_CODE_SMELLS ?: '0'}</div>
                                         <div class="metric-label">Total Code Smells</div>
                                     </div>
                                     <div class="metric-box coverage">
-                                        <div class="metric-value">${safeValue(env.SONAR_COVERAGE, '0.0')}%</div>
+                                        <div class="metric-value">${env.SONAR_COVERAGE ?: '0.0'}%</div>
                                         <div class="metric-label">Coverage</div>
                                     </div>
                                 </div>
 
                                 <div class="summary">
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${safeValue(env.SONAR_HOTSPOTS, '0')}</div>
+                                        <div class="metric-value">${env.SONAR_HOTSPOTS ?: '0'}</div>
                                         <div class="metric-label">Security Hotspots</div>
                                     </div>
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${safeValue(env.SONAR_DUPLICATION, '0.0')}%</div>
+                                        <div class="metric-value">${env.SONAR_DUPLICATION ?: '0.0'}%</div>
                                         <div class="metric-label">Duplication</div>
                                     </div>
                                     <div class="metric-box neutral">
-                                        <div class="metric-value">${safeValue(env.SONAR_LINES, '0')}</div>
+                                        <div class="metric-value">${env.SONAR_LINES ?: '0'}</div>
                                         <div class="metric-label">Lines of Code</div>
                                     </div>
                                 </div>
