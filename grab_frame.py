@@ -14,5 +14,5 @@ timestamp = time.strftime("%Y%m%d_%H%M%S")
 path = f"frame_captured_{timestamp}.png"
 cap.save_screenshot(filename=path)
 
-print("Frame saved on root directory:",path)
+print("Frame saved on Evidence directory, File name:",path)
 cap.stop()

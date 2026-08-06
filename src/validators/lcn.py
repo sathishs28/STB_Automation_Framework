@@ -3,6 +3,8 @@
 import time
 from core.logger import logging
 from pathlib import Path
+from src.navigators.channel_banner import ChannelBanner
+from src.remote import Remote
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -12,10 +14,19 @@ class LCN:
 
     def __init__(self, ctx):
         self.ctx = ctx
+        self.channel_banner = ChannelBanner(ctx)
+        self.remote = Remote(ctx)
 
         logger.debug(f" LCN Module called, to check the Customer:{self.ctx.customer} LCN Related testing...")
 
-    # Main Function
+    def switch_to_lcn(self, lcn):
+        logger.info(f"Switching to LCN - {lcn}...")
+        self.remote.send_key_sequence(lcn)
+        self.remote.send_key("OK")
+        """ Later implement the logic to verify if the channel has switched successfully. """
+
+
+    # Main Function LCN Finding in Channel List
     def lcn_find_ch_list(self, ng_lcn, exp_lcns, repeat=1, delay=10):
         logger.info("Started LCN finding in Channel list...")
 
@@ -30,7 +41,7 @@ class LCN:
             if self._find_expected_lcns(exp_lcns, attempt, repeat):
                 return True
 
-            self.ctx.backend.send_key("EXIT", 2)
+            self.remote.send_key("EXIT", 2)
 
             if attempt < repeat - 1:
                 logger.info("Wait for next try...")
@@ -70,7 +81,9 @@ class LCN:
                 return
 
             logger.info(f"LCN - {ng_lcn} not found, moving to next page")
-            self.ctx.backend.send_key("YELLOW COLOR KEY")
+
+            # For page down navigation, use the appropriate key based on your STB's remote control.
+            self.remote.send_key("YELLOW COLOR KEY")    
 
     # Find Expected LCNs
     def _find_expected_lcns(self, exp_lcns, attempt, repeat):

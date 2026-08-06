@@ -17,6 +17,16 @@ Step 1. Clone the Code and install Python V3.11 & Chrome Webdriver
     3. Install the .NET_Runtime .exe files (3 files there)
         Note: For more details, refer redrat official site.
 
+    4. Install OCR (ocr.py – Optical Character Recognition):
+        •	Install ocr pytessaract.
+            # pip install pytesseract pillow
+        •	install Tesseract OCR engine on Windows — it's a separate binary. Go to the url - https://github.com/UB-Mannheim/tesseract/wiki
+        •	Download and install the .exe file.
+        •	After installed, add the environment path of installed location.
+        •	Then check the version
+            # tesseract –version
+
+
 Step 2. Set Up a Virtual Environment:
     1. Open a terminal or command prompt on the other PC.
 
@@ -39,7 +49,7 @@ Step 4. After setup done, verify the IR blaster Unittest & Smoke testing, run fo
         python -m unittest tests.unit_tests.unittest_redrat_client
 
         python -m unittest tests.unit_tests.unittest_device_manager
-    For Smoke test:
+    For Smoke test: (Basic test Scripts there, need to update later)
         # Smoke test for IR validate.
         python -m tests.smoke_tests.ir_device_smoke_test
 

@@ -3,7 +3,7 @@ customer:
   name: tccl
 
 boot_sequence:
-#  - boot_logo
+  - boot_logo
 #  - boot_logo2
   - boot_ad
 #  - boot_loading
