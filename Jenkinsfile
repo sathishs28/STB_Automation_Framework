@@ -89,120 +89,125 @@ pipeline {
             steps {
                 script {
                     try {
-                        // --- Fetch metrics OUTSIDE withSonarQubeEnv to avoid env shadowing ---
-                        def metricsResponse = sh(
-                            script: """
-                                curl --silent --show-error \
-                                    -u ${env.SONAR_AUTH_TOKEN}: \
-                                    "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
-                            """,
-                            returnStdout: true
-                        ).trim()
+                        withSonarQubeEnv('SonarQube-Server') {
+                            // 1. Fetch Overall + New Metrics
+                            def metricsResponse = sh(
+                                script: """
+                                    curl --silent --show-error \
+                                        -u ${env.SONAR_AUTH_TOKEN}: \
+                                        "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
+                                """,
+                                returnStdout: true
+                            ).trim()
 
-                        echo "========== RAW SONAR RESPONSE =========="
-                        echo metricsResponse
-                        echo "========================================"
+                            echo "========== RAW SONAR RESPONSE =========="
+                            echo metricsResponse
+                            echo "========================================"
 
-                        def metricsJson = readJSON text: metricsResponse
+                            // Parse JSON
+                            def metricsJson = readJSON text: metricsResponse
 
-                        if (!metricsJson.component?.measures) {
-                            error("SonarQube API did not return any measures.")
+                            if (!metricsJson.component?.measures) {
+                                error("SonarQube API did not return any measures.")
+                            }
+
+                            // Build metric map
+                            def metricMap = [:]
+
+                            metricsJson.component.measures.each { measure ->
+                                // New metrics come in "periods" array, not "period"
+                                def periodValue = measure.periods?.find { it.index == 1 }?.value
+                                metricMap[measure.metric] = measure.value ?: periodValue ?: "N/A"
+                            }
+
+                            // Console Summary
+                            echo ""
+                            echo "========== SONAR METRICS =========="
+                            metricMap.each { key, value ->
+                                echo String.format("%-30s : %s", key, value)
+                            }
+                            echo "==================================="
+
+                            // Overall Metrics
+                            env.SONAR_BUGS            = metricMap['bugs'] ?: '0'
+                            env.SONAR_VULNERABILITIES = metricMap['vulnerabilities'] ?: '0'
+                            env.SONAR_CODE_SMELLS     = metricMap['code_smells'] ?: '0'
+                            env.SONAR_COVERAGE        = metricMap['coverage'] ?: '0.0'
+                            env.SONAR_DUPLICATION     = metricMap['duplicated_lines_density'] ?: '0.0'
+                            env.SONAR_LINES           = metricMap['ncloc'] ?: '0'
+                            env.SONAR_STATUS          = metricMap['alert_status'] ?: 'UNKNOWN'
+                            env.SONAR_HOTSPOTS        = metricMap['security_hotspots'] ?: '0'
+
+                            // New Code Metrics
+                            env.SONAR_NEW_BUGS            = metricMap['new_bugs'] ?: '0'
+                            env.SONAR_NEW_VULNERABILITIES = metricMap['new_vulnerabilities'] ?: '0'
+                            env.SONAR_NEW_CODE_SMELLS     = metricMap['new_code_smells'] ?: '0'
+                            env.SONAR_NEW_HOTSPOTS        = metricMap['new_security_hotspots'] ?: '0'
+                            env.SONAR_NEW_COVERAGE        = metricMap['new_coverage'] ?: '0.0'
+
+                            // Final Summary
+                            echo ""
+                            echo "========== FINAL SUMMARY =========="
+                            echo "Quality Gate     : ${env.SONAR_STATUS}"
+                            echo "Coverage         : ${env.SONAR_COVERAGE}%"
+                            echo "Code Smells      : ${env.SONAR_CODE_SMELLS}"
+                            echo "Bugs             : ${env.SONAR_BUGS}"
+                            echo "Vulnerabilities  : ${env.SONAR_VULNERABILITIES}"
+                            echo "Hotspots         : ${env.SONAR_HOTSPOTS}"
+                            echo "LOC              : ${env.SONAR_LINES}"
+                            echo "Duplication      : ${env.SONAR_DUPLICATION}%"
+                            echo "New Bugs         : ${env.SONAR_NEW_BUGS}"
+                            echo "New Vulns        : ${env.SONAR_NEW_VULNERABILITIES}"
+                            echo "New Smells       : ${env.SONAR_NEW_CODE_SMELLS}"
+                            echo "New Hotspots     : ${env.SONAR_NEW_HOTSPOTS}"
+                            echo "New Coverage     : ${env.SONAR_NEW_COVERAGE}%"
+                            echo "==================================="
+
+                            // 2. Fetch Severity Breakdown
+                            def issueResponse = sh(
+                                script: """
+                                    curl -s -u ${env.SONAR_AUTH_TOKEN}: \
+                                    "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            def issueJson = readJSON text: issueResponse
+
+                            def severityFacet = issueJson.facets.find {
+                                it.property == "severities"
+                            }
+
+                            def severityMap = [:]
+                            severityFacet?.values?.each {
+                                severityMap[it.val] = it.count
+                            }
+
+                            env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
+                            env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
+                            env.SONAR_MAJOR    = severityMap['MAJOR'] ?: '0'
+                            env.SONAR_MINOR    = severityMap['MINOR'] ?: '0'
+                            env.SONAR_INFO     = severityMap['INFO'] ?: '0'
+
+                            echo ""
+                            echo "========== SEVERITY BREAKDOWN =========="
+                            echo "Blocker  : ${env.SONAR_BLOCKER}"
+                            echo "Critical : ${env.SONAR_CRITICAL}"
+                            echo "Major    : ${env.SONAR_MAJOR}"
+                            echo "Minor    : ${env.SONAR_MINOR}"
+                            echo "Info     : ${env.SONAR_INFO}"
+                            echo "========================================"
                         }
-
-                        // Build metric map
-                        def metricMap = [:]
-                        metricsJson.component.measures.each { measure ->
-                            // NEW metrics use singular "period": {"index":1, "value":"0"}
-                            def newVal = measure.period?.value
-                            metricMap[measure.metric] = measure.value ?: newVal ?: "N/A"
-                        }
-
-                        echo ""
-                        echo "========== PARSED METRICS =========="
-                        metricMap.each { k, v -> echo String.format("%-30s : %s", k, v) }
-                        echo "===================================="
-
-                        // --- Explicitly set env vars with debug ---
-                        env.SONAR_BUGS            = metricMap['bugs']?.toString() ?: '0'
-                        env.SONAR_VULNERABILITIES = metricMap['vulnerabilities']?.toString() ?: '0'
-                        env.SONAR_CODE_SMELLS     = metricMap['code_smells']?.toString() ?: '0'
-                        env.SONAR_COVERAGE        = metricMap['coverage']?.toString() ?: '0.0'
-                        env.SONAR_DUPLICATION     = metricMap['duplicated_lines_density']?.toString() ?: '0.0'
-                        env.SONAR_LINES           = metricMap['ncloc']?.toString() ?: '0'
-                        env.SONAR_STATUS          = metricMap['alert_status']?.toString() ?: 'UNKNOWN'
-                        env.SONAR_HOTSPOTS        = metricMap['security_hotspots']?.toString() ?: '0'
-
-                        env.SONAR_NEW_BUGS            = metricMap['new_bugs']?.toString() ?: '0'
-                        env.SONAR_NEW_VULNERABILITIES = metricMap['new_vulnerabilities']?.toString() ?: '0'
-                        env.SONAR_NEW_CODE_SMELLS     = metricMap['new_code_smells']?.toString() ?: '0'
-                        env.SONAR_NEW_HOTSPOTS        = metricMap['new_security_hotspots']?.toString() ?: '0'
-                        env.SONAR_NEW_COVERAGE        = metricMap['new_coverage']?.toString() ?: '0.0'
-
-                        // Debug: prove env vars are set
-                        echo ""
-                        echo "========== ENV VERIFY =========="
-                        echo "SONAR_STATUS          = ${env.SONAR_STATUS}"
-                        echo "SONAR_CODE_SMELLS     = ${env.SONAR_CODE_SMELLS}"
-                        echo "SONAR_LINES           = ${env.SONAR_LINES}"
-                        echo "SONAR_NEW_BUGS        = ${env.SONAR_NEW_BUGS}"
-                        echo "SONAR_NEW_VULNERABILITIES = ${env.SONAR_NEW_VULNERABILITIES}"
-                        echo "================================"
-
-                        // --- Fetch severity breakdown ---
-                        def issueResponse = sh(
-                            script: """
-                                curl -s -u ${env.SONAR_AUTH_TOKEN}: \
-                                "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
-                            """,
-                            returnStdout: true
-                        ).trim()
-
-                        def issueJson = readJSON text: issueResponse
-                        def severityFacet = issueJson.facets?.find { it.property == "severities" }
-
-                        def severityMap = [:]
-                        severityFacet?.values?.each {
-                            severityMap[it.val] = it.count
-                        }
-
-                        env.SONAR_BLOCKER  = severityMap['BLOCKER']?.toString() ?: '0'
-                        env.SONAR_CRITICAL = severityMap['CRITICAL']?.toString() ?: '0'
-                        env.SONAR_MAJOR    = severityMap['MAJOR']?.toString() ?: '0'
-                        env.SONAR_MINOR    = severityMap['MINOR']?.toString() ?: '0'
-                        env.SONAR_INFO     = severityMap['INFO']?.toString() ?: '0'
-
-                        echo ""
-                        echo "========== FINAL SUMMARY =========="
-                        echo "Quality Gate     : ${env.SONAR_STATUS}"
-                        echo "Coverage         : ${env.SONAR_COVERAGE}%"
-                        echo "Code Smells      : ${env.SONAR_CODE_SMELLS}"
-                        echo "Bugs             : ${env.SONAR_BUGS}"
-                        echo "Vulnerabilities  : ${env.SONAR_VULNERABILITIES}"
-                        echo "Hotspots         : ${env.SONAR_HOTSPOTS}"
-                        echo "LOC              : ${env.SONAR_LINES}"
-                        echo "Duplication      : ${env.SONAR_DUPLICATION}%"
-                        echo "New Bugs         : ${env.SONAR_NEW_BUGS}"
-                        echo "New Vulns        : ${env.SONAR_NEW_VULNERABILITIES}"
-                        echo "New Smells       : ${env.SONAR_NEW_CODE_SMELLS}"
-                        echo "New Hotspots     : ${env.SONAR_NEW_HOTSPOTS}"
-                        echo "New Coverage     : ${env.SONAR_NEW_COVERAGE}%"
-                        echo "Blocker          : ${env.SONAR_BLOCKER}"
-                        echo "Critical         : ${env.SONAR_CRITICAL}"
-                        echo "Major            : ${env.SONAR_MAJOR}"
-                        echo "Minor            : ${env.SONAR_MINOR}"
-                        echo "Info             : ${env.SONAR_INFO}"
-                        echo "==================================="
 
                     } catch (Exception e) {
                         echo "WARNING: Could not fetch SonarQube metrics: ${e.message}"
-                        echo e.toString()
-                        // Defaults from environment{} block remain
+                        // Defaults remain
                     }
                 }
             }
         }
     }
-
+    
     post {
         always {
             script {
@@ -411,11 +416,11 @@ pipeline {
 
                                 <div class="links">
                                     <h3>Quick Links</h3>
-                                    <a href="${env.SONAR_HOST}/dashboard?id=${env.SONAR_PROJECT_KEY}" class="btn btn-primary">Dashboard</a>
-                                    <a href="${env.SONAR_HOST}/component_measures?id=${env.SONAR_PROJECT_KEY}" class="btn btn-success">Metrics</a>
-                                    <a href="${env.SONAR_HOST}/project/issues?id=${env.SONAR_PROJECT_KEY}&resolved=false" class="btn btn-warning">All Issues</a>
-                                    <a href="${env.SONAR_HOST}/project/issues?id=${env.SONAR_PROJECT_KEY}&resolved=false&sinceLeakPeriod=true" class="btn btn-danger">New Issues</a>
-                                    <a href="${env.SONAR_HOST}/security_hotspots?id=${env.SONAR_PROJECT_KEY}" class="btn btn-dark">Hotspots</a>
+                                    <a href="${SONAR_HOST}/dashboard?id=${SONAR_PROJECT_KEY}" class="btn btn-primary">Dashboard</a>
+                                    <a href="${SONAR_HOST}/component_measures?id=${SONAR_PROJECT_KEY}" class="btn btn-success">Metrics</a>
+                                    <a href="${SONAR_HOST}/project/issues?id=${SONAR_PROJECT_KEY}&resolved=false" class="btn btn-warning">All Issues</a>
+                                    <a href="${SONAR_HOST}/project/issues?id=${SONAR_PROJECT_KEY}&resolved=false&sinceLeakPeriod=true" class="btn btn-danger">New Issues</a>
+                                    <a href="${SONAR_HOST}/security_hotspots?id=${SONAR_PROJECT_KEY}" class="btn btn-dark">Hotspots</a>
                                     <br><br>
                                     <a href="${env.BUILD_URL}console" class="btn btn-primary">Jenkins Console</a>
                                 </div>
