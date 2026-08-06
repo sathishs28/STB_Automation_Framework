@@ -331,11 +331,20 @@ pipeline {
                         env.SONAR_NEW_HOTSPOTS = sonarData.newHotspots ?: '0'
                         env.SONAR_NEW_COVERAGE = sonarData.newCoverage ?: '0.0'
                         
+                        echo "DEBUG BEFORE severity assignment:"
+                        echo "  severityData.BLOCKER type: ${severityData.BLOCKER?.class?.name}"
+                        echo "  severityData.BLOCKER value: '${severityData.BLOCKER}'"
+                        echo "  Will assign to env.SONAR_BLOCKER: ${severityData.BLOCKER ?: '0'}"
+                        
                         env.SONAR_BLOCKER = severityData.BLOCKER ?: '0'
                         env.SONAR_CRITICAL = severityData.CRITICAL ?: '0'
                         env.SONAR_MAJOR = severityData.MAJOR ?: '0'
                         env.SONAR_MINOR = severityData.MINOR ?: '0'
                         env.SONAR_INFO = severityData.INFO ?: '0'
+                        
+                        echo "DEBUG AFTER severity assignment:"
+                        echo "  env.SONAR_BLOCKER = '${env.SONAR_BLOCKER}'"
+                        echo "  env.SONAR_MAJOR = '${env.SONAR_MAJOR}'"
                         
                         echo "FINAL VALUES:"
                         echo "  SONAR_BUGS = ${env.SONAR_BUGS}"
