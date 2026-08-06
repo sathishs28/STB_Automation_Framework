@@ -98,8 +98,12 @@ pipeline {
 
                                 def rawValue = measure.value
                                 if (rawValue == null || rawValue == '') {
-                                    def period = measure.periods?.find { it.index == 1 } ?: measure.periods?.first()
-                                    rawValue = period?.value
+                                    if (measure.period?.value != null && measure.period.value != '') {
+                                        rawValue = measure.period.value
+                                    } else if (measure.periods?.size() > 0) {
+                                        def period = measure.periods.find { it.index == 1 } ?: measure.periods.first()
+                                        rawValue = period?.value
+                                    }
                                 }
 
                                 return (rawValue == null || rawValue == '') ? fallback : rawValue.toString()
@@ -133,8 +137,12 @@ pipeline {
                             measures.each { measure ->
                                 def rawValue = measure.value
                                 if (rawValue == null || rawValue == '') {
-                                    def period = measure.periods?.find { it.index == 1 } ?: measure.periods?.first()
-                                    rawValue = period?.value
+                                    if (measure.period?.value != null && measure.period.value != '') {
+                                        rawValue = measure.period.value
+                                    } else if (measure.periods?.size() > 0) {
+                                        def period = measure.periods.find { it.index == 1 } ?: measure.periods.first()
+                                        rawValue = period?.value
+                                    }
                                 }
                                 metricMap[measure.metric] = (rawValue == null || rawValue == '') ? '0' : rawValue.toString()
                             }
@@ -148,38 +156,53 @@ pipeline {
                             echo "==================================="
 
                             // Overall Metrics
-                            env.SONAR_BUGS            = getMetricValue(measures, 'bugs', '0')
-                            env.SONAR_VULNERABILITIES = getMetricValue(measures, 'vulnerabilities', '0')
-                            env.SONAR_CODE_SMELLS     = getMetricValue(measures, 'code_smells', '0')
-                            env.SONAR_COVERAGE        = getMetricValue(measures, 'coverage', '0.0')
-                            env.SONAR_DUPLICATION     = getMetricValue(measures, 'duplicated_lines_density', '0.0')
-                            env.SONAR_LINES           = getMetricValue(measures, 'ncloc', '0')
-                            env.SONAR_STATUS          = getMetricValue(measures, 'alert_status', 'UNKNOWN')
-                            env.SONAR_HOTSPOTS        = getMetricValue(measures, 'security_hotspots', '0')
+                            def sonarSummary = [:]
+                            sonarSummary.bugs            = getMetricValue(measures, 'bugs', '0')
+                            sonarSummary.vulnerabilities = getMetricValue(measures, 'vulnerabilities', '0')
+                            sonarSummary.codeSmells      = getMetricValue(measures, 'code_smells', '0')
+                            sonarSummary.coverage        = getMetricValue(measures, 'coverage', '0.0')
+                            sonarSummary.duplication     = getMetricValue(measures, 'duplicated_lines_density', '0.0')
+                            sonarSummary.lines           = getMetricValue(measures, 'ncloc', '0')
+                            sonarSummary.status          = getMetricValue(measures, 'alert_status', 'UNKNOWN')
+                            sonarSummary.hotspots        = getMetricValue(measures, 'security_hotspots', '0')
 
                             // New Code Metrics
-                            env.SONAR_NEW_BUGS            = getMetricValue(measures, 'new_bugs', '0')
-                            env.SONAR_NEW_VULNERABILITIES = getMetricValue(measures, 'new_vulnerabilities', '0')
-                            env.SONAR_NEW_CODE_SMELLS     = getMetricValue(measures, 'new_code_smells', '0')
-                            env.SONAR_NEW_HOTSPOTS        = getMetricValue(measures, 'new_security_hotspots', '0')
-                            env.SONAR_NEW_COVERAGE        = getMetricValue(measures, 'new_coverage', '0.0')
+                            sonarSummary.newBugs            = getMetricValue(measures, 'new_bugs', '0')
+                            sonarSummary.newVulnerabilities = getMetricValue(measures, 'new_vulnerabilities', '0')
+                            sonarSummary.newCodeSmells      = getMetricValue(measures, 'new_code_smells', '0')
+                            sonarSummary.newHotspots        = getMetricValue(measures, 'new_security_hotspots', '0')
+                            sonarSummary.newCoverage        = getMetricValue(measures, 'new_coverage', '0.0')
+
+                            env.SONAR_BUGS            = sonarSummary.bugs
+                            env.SONAR_VULNERABILITIES = sonarSummary.vulnerabilities
+                            env.SONAR_CODE_SMELLS     = sonarSummary.codeSmells
+                            env.SONAR_COVERAGE        = sonarSummary.coverage
+                            env.SONAR_DUPLICATION     = sonarSummary.duplication
+                            env.SONAR_LINES           = sonarSummary.lines
+                            env.SONAR_STATUS          = sonarSummary.status
+                            env.SONAR_HOTSPOTS        = sonarSummary.hotspots
+                            env.SONAR_NEW_BUGS            = sonarSummary.newBugs
+                            env.SONAR_NEW_VULNERABILITIES = sonarSummary.newVulnerabilities
+                            env.SONAR_NEW_CODE_SMELLS     = sonarSummary.newCodeSmells
+                            env.SONAR_NEW_HOTSPOTS        = sonarSummary.newHotspots
+                            env.SONAR_NEW_COVERAGE        = sonarSummary.newCoverage
 
                             // Final Summary
                             echo ""
                             echo "========== FINAL SUMMARY =========="
-                            echo "Quality Gate     : ${env.SONAR_STATUS}"
-                            echo "Coverage         : ${env.SONAR_COVERAGE}%"
-                            echo "Code Smells      : ${env.SONAR_CODE_SMELLS}"
-                            echo "Bugs             : ${env.SONAR_BUGS}"
-                            echo "Vulnerabilities  : ${env.SONAR_VULNERABILITIES}"
-                            echo "Hotspots         : ${env.SONAR_HOTSPOTS}"
-                            echo "LOC              : ${env.SONAR_LINES}"
-                            echo "Duplication      : ${env.SONAR_DUPLICATION}%"
-                            echo "New Bugs         : ${env.SONAR_NEW_BUGS}"
-                            echo "New Vulns        : ${env.SONAR_NEW_VULNERABILITIES}"
-                            echo "New Smells       : ${env.SONAR_NEW_CODE_SMELLS}"
-                            echo "New Hotspots     : ${env.SONAR_NEW_HOTSPOTS}"
-                            echo "New Coverage     : ${env.SONAR_NEW_COVERAGE}%"
+                            echo "Quality Gate     : ${sonarSummary.status}"
+                            echo "Coverage         : ${sonarSummary.coverage}%"
+                            echo "Code Smells      : ${sonarSummary.codeSmells}"
+                            echo "Bugs             : ${sonarSummary.bugs}"
+                            echo "Vulnerabilities  : ${sonarSummary.vulnerabilities}"
+                            echo "Hotspots         : ${sonarSummary.hotspots}"
+                            echo "LOC              : ${sonarSummary.lines}"
+                            echo "Duplication      : ${sonarSummary.duplication}%"
+                            echo "New Bugs         : ${sonarSummary.newBugs}"
+                            echo "New Vulns        : ${sonarSummary.newVulnerabilities}"
+                            echo "New Smells       : ${sonarSummary.newCodeSmells}"
+                            echo "New Hotspots     : ${sonarSummary.newHotspots}"
+                            echo "New Coverage     : ${sonarSummary.newCoverage}%"
                             echo "==================================="
 
                             // 2. Fetch Severity Breakdown
