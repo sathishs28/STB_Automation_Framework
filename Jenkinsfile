@@ -88,6 +88,10 @@ pipeline {
         stage('Fetch SonarQube Report Data') {
             steps {
                 script {
+                    // Declare maps at script scope - they'll persist through withSonarQubeEnv
+                    def sonarData = [:]
+                    def severityData = [:]
+                    
                     try {
                         withSonarQubeEnv('SonarQube-Server') {
                             def getMetricValue = { measures, metricName, fallback = '0' ->
@@ -173,19 +177,20 @@ pipeline {
                             sonarSummary.newHotspots        = getMetricValue(measures, 'new_security_hotspots', '0')
                             sonarSummary.newCoverage        = getMetricValue(measures, 'new_coverage', '0.0')
 
-                            env.SONAR_BUGS            = sonarSummary.bugs
-                            env.SONAR_VULNERABILITIES = sonarSummary.vulnerabilities
-                            env.SONAR_CODE_SMELLS     = sonarSummary.codeSmells
-                            env.SONAR_COVERAGE        = sonarSummary.coverage
-                            env.SONAR_DUPLICATION     = sonarSummary.duplication
-                            env.SONAR_LINES           = sonarSummary.lines
-                            env.SONAR_STATUS          = sonarSummary.status
-                            env.SONAR_HOTSPOTS        = sonarSummary.hotspots
-                            env.SONAR_NEW_BUGS            = sonarSummary.newBugs
-                            env.SONAR_NEW_VULNERABILITIES = sonarSummary.newVulnerabilities
-                            env.SONAR_NEW_CODE_SMELLS     = sonarSummary.newCodeSmells
-                            env.SONAR_NEW_HOTSPOTS        = sonarSummary.newHotspots
-                            env.SONAR_NEW_COVERAGE        = sonarSummary.newCoverage
+                            // Store in outer-scope map that persists after withSonarQubeEnv
+                            sonarData.bugs = sonarSummary.bugs
+                            sonarData.vulnerabilities = sonarSummary.vulnerabilities
+                            sonarData.codeSmells = sonarSummary.codeSmells
+                            sonarData.coverage = sonarSummary.coverage
+                            sonarData.duplication = sonarSummary.duplication
+                            sonarData.lines = sonarSummary.lines
+                            sonarData.status = sonarSummary.status
+                            sonarData.hotspots = sonarSummary.hotspots
+                            sonarData.newBugs = sonarSummary.newBugs
+                            sonarData.newVulnerabilities = sonarSummary.newVulnerabilities
+                            sonarData.newCodeSmells = sonarSummary.newCodeSmells
+                            sonarData.newHotspots = sonarSummary.newHotspots
+                            sonarData.newCoverage = sonarSummary.newCoverage
 
                             // Final Summary
                             echo ""
@@ -279,12 +284,18 @@ pipeline {
 
                             echo "Final severity map: ${severityMap}"
 
-                            // Set environment variables
+                            // Set environment variables and store in outer-scope map
                             env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
                             env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
                             env.SONAR_MAJOR    = severityMap['MAJOR'] ?: '0'
                             env.SONAR_MINOR    = severityMap['MINOR'] ?: '0'
                             env.SONAR_INFO     = severityMap['INFO'] ?: '0'
+                            
+                            severityData.BLOCKER = severityMap['BLOCKER'] ?: '0'
+                            severityData.CRITICAL = severityMap['CRITICAL'] ?: '0'
+                            severityData.MAJOR = severityMap['MAJOR'] ?: '0'
+                            severityData.MINOR = severityMap['MINOR'] ?: '0'
+                            severityData.INFO = severityMap['INFO'] ?: '0'
 
                             echo ""
                             echo "========== SEVERITY BREAKDOWN =========="
@@ -295,6 +306,35 @@ pipeline {
                             echo "Info     : ${env.SONAR_INFO}"
                             echo "========================================"
                         }
+
+                        // ASSIGN ALL ENV VARS OUTSIDE withSonarQubeEnv BLOCK
+                        echo ""
+                        echo "========== PERSISTING TO ENV VARS ==========="
+                        env.SONAR_BUGS = sonarData.bugs ?: '0'
+                        env.SONAR_VULNERABILITIES = sonarData.vulnerabilities ?: '0'
+                        env.SONAR_CODE_SMELLS = sonarData.codeSmells ?: '0'
+                        env.SONAR_COVERAGE = sonarData.coverage ?: '0.0'
+                        env.SONAR_DUPLICATION = sonarData.duplication ?: '0.0'
+                        env.SONAR_LINES = sonarData.lines ?: '0'
+                        env.SONAR_STATUS = sonarData.status ?: 'UNKNOWN'
+                        env.SONAR_HOTSPOTS = sonarData.hotspots ?: '0'
+                        env.SONAR_NEW_BUGS = sonarData.newBugs ?: '0'
+                        env.SONAR_NEW_VULNERABILITIES = sonarData.newVulnerabilities ?: '0'
+                        env.SONAR_NEW_CODE_SMELLS = sonarData.newCodeSmells ?: '0'
+                        env.SONAR_NEW_HOTSPOTS = sonarData.newHotspots ?: '0'
+                        env.SONAR_NEW_COVERAGE = sonarData.newCoverage ?: '0.0'
+                        
+                        env.SONAR_BLOCKER = severityData.BLOCKER ?: '0'
+                        env.SONAR_CRITICAL = severityData.CRITICAL ?: '0'
+                        env.SONAR_MAJOR = severityData.MAJOR ?: '0'
+                        env.SONAR_MINOR = severityData.MINOR ?: '0'
+                        env.SONAR_INFO = severityData.INFO ?: '0'
+                        
+                        echo "FINAL VALUES:"
+                        echo "  SONAR_BUGS = ${env.SONAR_BUGS}"
+                        echo "  SONAR_BLOCKER = ${env.SONAR_BLOCKER}"
+                        echo "  SONAR_MAJOR = ${env.SONAR_MAJOR}"
+                        echo "============================================"
 
                     } catch (Exception e) {
                         echo "WARNING: Could not fetch SonarQube metrics: ${e.message}"
