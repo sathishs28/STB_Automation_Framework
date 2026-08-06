@@ -211,7 +211,7 @@ pipeline {
                                     curl --fail --silent --show-error \
                                         -H 'Accept: application/json' \
                                         -u ${env.SONAR_AUTH_TOKEN}: \
-                                        "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=1"
+                                        "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=100"
                                 """,
                                 returnStdout: true
                             ).trim()
@@ -223,46 +223,66 @@ pipeline {
                             echo issueResponse
                             echo "========================================"
 
-                            def severityFacet = issueJson.facets?.find {
-                                it.property == "severities"
-                            }
-
                             echo ""
                             echo "========== DEBUG SEVERITY PARSING =========="
-                            echo "Facets: ${issueJson.facets}"
-                            echo "Severity Facet: ${severityFacet}"
-                            echo "Severity Facet Values: ${severityFacet?.values}"
+                            echo "Full Response: ${issueJson}"
+                            echo "Facets Exists: ${issueJson.facets != null}"
+                            echo "Facets Type: ${issueJson.facets?.getClass()}"
+                            echo "Facets Size: ${issueJson.facets?.size()}"
                             echo "============================================"
 
-                            def severityMap = [:]
-                            if (severityFacet?.values) {
-                                echo "Parsing facets values..."
-                                severityFacet.values.each { entry ->
-                                    def severityKey = entry.val ?: entry.value ?: entry.key
-                                    def countValue = entry.count ?: entry.c
-                                    echo "  Severity: ${severityKey}, Count: ${countValue}"
-                                    if (severityKey) {
-                                        severityMap[severityKey] = countValue != null ? countValue.toString() : '0'
+                            def severityMap = ['BLOCKER': '0', 'CRITICAL': '0', 'MAJOR': '0', 'MINOR': '0', 'INFO': '0']
+
+                            // Try to parse from facets if available
+                            def facetsParsed = false
+                            if (issueJson.facets && issueJson.facets.size() > 0) {
+                                echo "Attempting to parse facets..."
+                                try {
+                                    issueJson.facets.each { facet ->
+                                        echo "  Checking facet: ${facet.property}"
+                                        if (facet.property == 'severities' && facet.values) {
+                                            echo "  Found severities facet with ${facet.values.size()} entries"
+                                            facet.values.each { entry ->
+                                                def severity = entry.val ?: entry.value
+                                                def count = entry.count
+                                                echo "    Severity: ${severity} = ${count}"
+                                                if (severity && count != null) {
+                                                    severityMap[severity] = count.toString()
+                                                    facetsParsed = true
+                                                }
+                                            }
+                                        }
                                     }
+                                } catch (Exception e) {
+                                    echo "  Error parsing facets: ${e.message}"
                                 }
-                                echo "Severity Map after facets: ${severityMap}"
-                            } else if (issueJson.issues) {
-                                echo "Facets not found, counting from issues array..."
-                                issueJson.issues.each { issue ->
-                                    def severity = issue.severity ?: issue.sev
-                                    if (severity) {
-                                        def currentCount = severityMap[severity] ?: '0'
-                                        severityMap[severity] = (currentCount.toInteger() + 1).toString()
-                                    }
-                                }
-                                echo "Severity Map after issues fallback: ${severityMap}"
                             }
 
-                            env.SONAR_BLOCKER  = (severityMap['BLOCKER'] ?: '0').toString()
-                            env.SONAR_CRITICAL = (severityMap['CRITICAL'] ?: '0').toString()
-                            env.SONAR_MAJOR    = (severityMap['MAJOR'] ?: '0').toString()
-                            env.SONAR_MINOR    = (severityMap['MINOR'] ?: '0').toString()
-                            env.SONAR_INFO     = (severityMap['INFO'] ?: '0').toString()
+                            echo "Facets parsed successfully: ${facetsParsed}"
+
+                            // Fallback: count from issues array if facets didn't work
+                            if (!facetsParsed && issueJson.issues) {
+                                echo "Fallback: counting from issues array (${issueJson.issues.size()} issues)..."
+                                def issueCounts = [:]
+                                issueJson.issues.each { issue ->
+                                    def severity = issue.severity
+                                    if (severity) {
+                                        issueCounts[severity] = (issueCounts[severity] ?: 0) + 1
+                                        echo "  Issue severity: ${severity}"
+                                    }
+                                }
+                                echo "Issue counts: ${issueCounts}"
+                                issueCounts.each { severity, count ->
+                                    severityMap[severity] = count.toString()
+                                }
+                            }
+
+                            echo "Final severity map: ${severityMap}"
+
+                            // Set environment variables
+                            env.SONAR_BLOCKER  = severityMap['BLOCKER'] ?: '0'
+                            env.SONAR_CRITICAL = severityMap['CRITICAL'] ?: '0'
+                            env.SONAR_MAJOR    = severityMap['MAJOR'] ?: '0'
                             env.SONAR_MINOR    = severityMap['MINOR'] ?: '0'
                             env.SONAR_INFO     = severityMap['INFO'] ?: '0'
 
