@@ -124,7 +124,7 @@ class RedRat_Client:
                 elif response.status_code == 404:
                     logger.error("❌ Device not found — wrong device ID")
                     logger.error(f"   Check → REDRAT_DEVICE_ID='{self.device_id}' in your .env")
-                    logger.error(f"   Tip   → Run GET /api/redrats in Swagger to get correct ID")
+                    logger.error("   Tip   → Run GET /api/redrats in Swagger to get correct ID")
                     raise IRTransmitError(f"Device '{self.device_id}' not found")
 
                 elif response.status_code == 500:
@@ -161,27 +161,3 @@ class RedRat_Client:
             raise last_connection_error
 
         return None
-
-
-"""
-# if you want to test/debug the redrat_client, need to setup the logger it.
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-)
-
-client = RedRatClient()
-is_healthy = client.health_check()
-print("Validate IR device - call get device", is_healthy)
-#print(ir)
-client = RedRat_Client()
-client.send_signal(signal="3")
-client.send_signal(signal="7")
-client.send_signal(signal="2")
-client.send_signal(signal="3")
-client.send_signal(signal="8")
-client.send_signal(signal="9")
-client = RedRat_Client()
-client.send_signal(signal="OK")
-"""

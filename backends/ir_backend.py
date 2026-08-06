@@ -1,5 +1,3 @@
-# backends/ir_backend.py
-#import os
 import time
 import logging
 from dataclasses import dataclass
