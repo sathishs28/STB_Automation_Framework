@@ -22,14 +22,241 @@ pipeline {
         timestamps()
     }
 
+    // 1. CHECKOUT SOURCE CODE
     stages {
+        // =====================================================
+        // 1. CHECKOUT SOURCE CODE
+        // =====================================================
         stage('Checkout') {
             steps {
+                echo '========================================='
+                echo 'Checking out source code'
+                echo '========================================='
+
                 checkout scm
-                echo "Commit: ${env.GIT_COMMIT?.take(7)}"
             }
         }
 
+
+        // =====================================================
+        // 2. SETUP PYTHON ENVIRONMENT
+        // =====================================================
+        stage('Setup Python Environment') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            set -e
+
+                            echo "Python version:"
+                            python3 --version
+
+                            echo "Creating virtual environment..."
+
+                            if [ ! -d "${VENV_DIR}" ]; then
+                                python3 -m venv "${VENV_DIR}"
+                            fi
+
+                            . "${VENV_DIR}/bin/activate"
+
+                            python -m pip install --upgrade pip setuptools wheel
+                        '''
+                    } else {
+                        bat '''
+                            @echo off
+
+                            python --version
+
+                            if not exist "%VENV_DIR%" (
+                                python -m venv "%VENV_DIR%"
+                            )
+
+                            call %VENV_DIR%\\Scripts\\activate.bat
+
+                            python -m pip install --upgrade pip setuptools wheel
+                        '''
+                    }
+                }
+            }
+        }
+
+
+        // =====================================================
+        // 3. INSTALL PROJECT DEPENDENCIES
+        // =====================================================
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            set -e
+
+                            . "${VENV_DIR}/bin/activate"
+
+                            if [ -f requirements.txt ]; then
+                                echo "Installing project dependencies..."
+                                python -m pip install -r requirements.txt
+                            fi
+
+                            echo "Installing test dependencies..."
+                            python -m pip install pytest pytest-cov
+                        '''
+                    } else {
+                        bat '''
+                            @echo off
+
+                            call %VENV_DIR%\\Scripts\\activate.bat
+
+                            if exist requirements.txt (
+                                echo Installing project dependencies...
+                                python -m pip install -r requirements.txt
+                            )
+
+                            echo Installing test dependencies...
+                            python -m pip install pytest pytest-cov
+                        '''
+                    }
+                }
+            }
+        }
+
+
+        // =====================================================
+        // 4. RUN UNIT TESTS AND GENERATE COVERAGE
+        // =====================================================
+        stage('Unit Tests and Coverage') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            set -e
+
+                            . "${VENV_DIR}/bin/activate"
+
+                            echo "Cleaning previous reports..."
+
+                            rm -f coverage.xml
+                            rm -f test-results.xml
+                            rm -f .coverage
+                            rm -rf htmlcov
+
+                            echo "Running unit tests..."
+
+                            python -m pytest \
+                                tests/unit_mock_tests \
+                                -m unit \
+                                --cov=src \
+                                --cov-branch \
+                                --cov-report=term-missing \
+                                --cov-report=xml:coverage.xml \
+                                --cov-report=html:htmlcov \
+                                --junitxml=test-results.xml \
+                                -v
+                        '''
+                    } else {
+                        bat '''
+                            @echo off
+                            setlocal
+
+                            call %VENV_DIR%\\Scripts\\activate.bat
+
+                            echo Cleaning previous reports...
+
+                            if exist coverage.xml del /f /q coverage.xml
+                            if exist test-results.xml del /f /q test-results.xml
+                            if exist .coverage del /f /q .coverage
+                            if exist htmlcov rmdir /s /q htmlcov
+
+                            echo Running unit tests...
+
+                            python -m pytest tests\\unit -m unit ^
+                                --cov=src ^
+                                --cov-branch ^
+                                --cov-report=term-missing ^
+                                --cov-report=xml:coverage.xml ^
+                                --cov-report=html:htmlcov ^
+                                --junitxml=test-results.xml ^
+                                -v
+
+                            endlocal
+                        '''
+                    }
+                }
+            }
+
+            post {
+                always {
+
+                    echo 'Publishing unit test results...'
+
+                    junit(
+                        allowEmptyResults: true,
+                        testResults: 'test-results.xml'
+                    )
+
+                    archiveArtifacts(
+                        artifacts: 'coverage.xml',
+                        allowEmptyArchive: true
+                    )
+
+                    archiveArtifacts(
+                        artifacts: 'htmlcov/**',
+                        allowEmptyArchive: true
+                    )
+                }
+            }
+        }
+
+
+        // =====================================================
+        // 5. VERIFY COVERAGE REPORT
+        // =====================================================
+        stage('Verify Coverage Report') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            set -e
+
+                            if [ ! -f coverage.xml ]; then
+                                echo "ERROR: coverage.xml was not generated."
+                                exit 1
+                            fi
+
+                            echo "========================================="
+                            echo "Coverage report generated successfully"
+                            echo "========================================="
+
+                            ls -lh coverage.xml
+
+                            echo ""
+                            echo "Coverage report preview:"
+                            head -n 10 coverage.xml
+                        '''
+                    } else {
+                        bat '''
+                            @echo off
+
+                            if not exist coverage.xml (
+                                echo ERROR: coverage.xml was not generated.
+                                exit /b 1
+                            )
+
+                            echo =========================================
+                            echo Coverage report generated successfully
+                            echo =========================================
+
+                            dir coverage.xml
+                        '''
+                    }
+                }
+            }
+        }
+
+
+        // =====================================================
+        // 6. SONARQUBE ANALYSIS
+        // =====================================================
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube-Server') {
@@ -45,24 +272,38 @@ pipeline {
             }
         }
 
+        
+        // =====================================================
+        // 7. SONARQUBE QUALITY GATE
+        // =====================================================
         stage('Quality Gate') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qg = waitForQualityGate()
-                        env.SONAR_STATUS = qg.status
+                timeout(time: 10, unit: 'MINUTES') {
 
-                        if (qg.status != 'OK') {
-                            currentBuild.result = 'UNSTABLE'
-                            echo "Quality Gate failed: ${qg.status}"
-                        } else {
-                            echo "Quality Gate passed"
+                    script {
+
+                        echo 'Waiting for SonarQube Quality Gate...'
+
+                        def qualityGate = waitForQualityGate()
+
+                        echo "========================================="
+                        echo "SonarQube Quality Gate: ${qualityGate.status}"
+                        echo "========================================="
+
+                        if (qualityGate.status != 'OK') {
+
+                            error(
+                                "SonarQube Quality Gate failed: " +
+                                "${qualityGate.status}"
+                            )
                         }
+
+                        echo 'SonarQube Quality Gate passed successfully.'
                     }
                 }
             }
         }
-
+    
         stage('Fetch SonarQube Report Data') {
             steps {
                 script {
@@ -270,8 +511,25 @@ pipeline {
             }
         }
     }
-
+    
+    // =========================================================
+    // POST BUILD ACTIONS
+    // =========================================================
     post {
+        success {
+            echo '========================================='
+            echo 'BUILD SUCCESSFUL'
+            echo 'All unit tests passed.'
+            echo 'SonarQube Quality Gate passed.'
+            echo '========================================='
+        }
+
+        failure {
+            echo '========================================='
+            echo 'BUILD FAILED'
+            echo 'Please check the failed stage.'
+            echo '========================================='
+        }
         always {
             script {
                 sonarNativePdfReport(
