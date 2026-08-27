@@ -18,3 +18,7 @@ __pycache__/
 # IDE files
 .idea/
 .vscode/
+
+# Allure Reports
+allure-report/
+allure-results/
