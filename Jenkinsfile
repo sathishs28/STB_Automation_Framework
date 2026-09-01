@@ -32,6 +32,11 @@ pipeline {
         // Test Configuration
         // -----------------------------------------------------
         UNIT_TEST_DIR = 'tests/unit_mock_tests'
+
+        // -----------------------------------------------------
+        // CI Installation dependencies - requirements.txt
+        // -----------------------------------------------------
+        REQUIREMENTS_FILE = 'requirements-ci.txt'
     }
 
     // =========================================================
@@ -181,15 +186,15 @@ pipeline {
                             echo "Installing Project Dependencies"
                             echo "-----------------------------------------"
 
-                            if [ -f requirements.txt ]; then
+                            if [ -f ${REQUIREMENTS_FILE} ]; then
 
                                 python -m pip install \\
                                     --no-cache-dir \\
-                                    -r requirements.txt
+                                    -r ${REQUIREMENTS_FILE}
 
                             else
 
-                                echo "WARNING: requirements.txt not found."
+                                echo "WARNING: ${REQUIREMENTS_FILE} not found."
 
                             fi
 
