@@ -2,7 +2,9 @@
 
 pipeline {
 
-    agent any
+    agent {
+    label 'docker-ci'
+    }
 
     // =========================================================
     // ENVIRONMENT
