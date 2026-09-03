@@ -3,7 +3,7 @@
 pipeline {
 
     agent {
-    label 'docker-ci'
+        label 'docker-ci'
     }
 
     // =========================================================
@@ -141,102 +141,98 @@ pipeline {
 
 
         // =====================================================
-        // 3. RUN UNIT TESTS + COVERAGE
+        // 3. UNIT TESTS
         // =====================================================
 
-        stage('Unit Tests and Coverage') {
+        stage('Unit Tests') {
 
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    sh """
 
-                sh """
+                        set -e
 
-                    set -e
+                        echo "========================================="
+                        echo "Preparing test environment"
+                        echo "========================================="
 
-                    echo "========================================="
-                    echo "Preparing test environment"
-                    echo "========================================="
+                        rm -f coverage.xml
+                        rm -f test-results.xml
+                        rm -f .coverage
+                        rm -rf htmlcov
 
-                    rm -f coverage.xml
-                    rm -f test-results.xml
-                    rm -f .coverage
+                        echo "========================================="
+                        echo "Running Unit Tests inside CI Container"
+                        echo "========================================="
 
-                    rm -rf htmlcov
+                        docker run --rm \\
+                            -v "\${WORKSPACE}:/workspace" \\
+                            -w /workspace \\
+                            ${CI_IMAGE} \\
+                            bash -c '
 
+                                set -e
 
-                    echo "========================================="
-                    echo "Running Unit Tests inside CI Container"
-                    echo "========================================="
+                                echo "-----------------------------------------"
+                                echo "Python"
+                                echo "-----------------------------------------"
+                                python --version
 
-                    docker run --rm \\
-                        -v "\${WORKSPACE}:/workspace" \\
-                        -w /workspace \\
-                        ${CI_IMAGE} \\
-                        bash -c '
+                                echo ""
+                                echo "-----------------------------------------"
+                                echo "Installing Project Dependencies"
+                                echo "-----------------------------------------"
 
-                            set -e
+                                if [ -f ${REQUIREMENTS_FILE} ]; then
 
-                            echo "-----------------------------------------"
-                            echo "Python"
-                            echo "-----------------------------------------"
+                                    python -m pip install \\
+                                        --no-cache-dir \\
+                                        -r ${REQUIREMENTS_FILE}
 
-                            python --version
+                                else
 
-                            echo ""
-                            echo "-----------------------------------------"
-                            echo "Installing Project Dependencies"
-                            echo "-----------------------------------------"
+                                    echo "WARNING: ${REQUIREMENTS_FILE} not found."
 
-                            if [ -f ${REQUIREMENTS_FILE} ]; then
-
-                                python -m pip install \\
-                                    --no-cache-dir \\
-                                    -r ${REQUIREMENTS_FILE}
-
-                            else
-
-                                echo "WARNING: ${REQUIREMENTS_FILE} not found."
-
-                            fi
+                                fi
 
 
-                            echo ""
-                            echo "-----------------------------------------"
-                            echo "Running Unit Tests"
-                            echo "-----------------------------------------"
+                                echo ""
+                                echo "-----------------------------------------"
+                                echo "Running Unit Tests"
+                                echo "-----------------------------------------"
 
-                            python -m pytest \\
-                                ${UNIT_TEST_DIR} \\
-                                -m unit \\
-                                --cov=src \\
-                                --cov-branch \\
-                                --cov-report=term-missing \\
-                                --cov-report=xml:coverage.xml \\
-                                --cov-report=html:htmlcov \\
-                                --junitxml=test-results.xml \\
-                                -v
+                                python -m pytest \\
+                                    ${UNIT_TEST_DIR} \\
+                                    --confcutdir=${UNIT_TEST_DIR} \\
+                                    -m unit \\
+                                    --cov=src \\
+                                    --cov-branch \\
+                                    --cov-report=term-missing \\
+                                    --cov-report=xml:coverage.xml \\
+                                    --cov-report=html:htmlcov \\
+                                    --junitxml=test-results.xml \\
+                                    -v
 
 
-                            echo ""
-                            echo "-----------------------------------------"
-                            echo "Generated Reports"
-                            echo "-----------------------------------------"
+                                echo ""
+                                echo "-----------------------------------------"
+                                echo "Generated Reports"
+                                echo "-----------------------------------------"
 
-                            ls -lh coverage.xml
-                            ls -lh test-results.xml
+                                ls -lh coverage.xml || true
+                                ls -lh test-results.xml || true
+                            '
 
-                        '
-
-                    echo ""
-                    echo "========================================="
-                    echo "Unit Test Execution Completed"
-                    echo "========================================="
-                """
+                        echo ""
+                        echo "========================================="
+                        echo "Unit Test Execution Completed"
+                        echo "========================================="
+                    """
+                }
             }
 
             post {
-
                 always {
-
                     echo 'Publishing unit test results...'
 
                     junit(
@@ -262,37 +258,33 @@ pipeline {
         // 4. VERIFY COVERAGE REPORT
         // =====================================================
 
-        stage('Verify Coverage Report') {
+        stage('Coverage Report') {
 
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    sh '''
 
-                sh '''
+                        set -e
 
-                    set -e
+                        echo "========================================="
+                        echo "Verifying Coverage Report"
+                        echo "========================================="
 
-                    echo "========================================="
-                    echo "Verifying Coverage Report"
-                    echo "========================================="
+                        if [ ! -f coverage.xml ]; then
+                            echo "ERROR: coverage.xml was not generated."
+                            exit 1
+                        fi
 
-                    if [ ! -f coverage.xml ]; then
+                        echo ""
+                        echo "Coverage report generated successfully."
+                        ls -lh coverage.xml
 
-                        echo "ERROR: coverage.xml was not generated."
+                        echo ""
+                        echo "Coverage report preview:"
+                        head -n 10 coverage.xml
 
-                        exit 1
-
-                    fi
-
-                    echo ""
-                    echo "Coverage report generated successfully."
-
-                    ls -lh coverage.xml
-
-                    echo ""
-                    echo "Coverage report preview:"
-
-                    head -n 10 coverage.xml
-
-                '''
+                    '''
+                }
             }
         }
 
@@ -304,30 +296,32 @@ pipeline {
         stage('SonarQube Analysis') {
 
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
 
-                echo '========================================='
-                echo 'Starting SonarQube Analysis'
-                echo '========================================='
+                    echo '========================================='
+                    echo 'Starting SonarQube Analysis'
+                    echo '========================================='
 
-                withSonarQubeEnv('SonarQube-Server') {
+                    withSonarQubeEnv('SonarQube-Server') {
 
-                    sh """
+                        sh """
 
-                        set -e
+                            set -e
 
-                        ${SCANNER_HOME}/bin/sonar-scanner \\
+                            ${SCANNER_HOME}/bin/sonar-scanner \\
 
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
+                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
 
-                            -Dsonar.projectName="${SONAR_PROJECT_NAME}" \\
+                                -Dsonar.projectName="${SONAR_PROJECT_NAME}" \\
 
-                            -Dsonar.sources=. \\
+                                -Dsonar.sources=. \\
 
-                            -Dsonar.host.url=${env.SONAR_HOST_URL} \\
+                                -Dsonar.host.url=${SONAR_HOST} \\
 
-                            -Dsonar.token=${env.SONAR_AUTH_TOKEN}
+                                -Dsonar.token=${env.SONAR_AUTH_TOKEN}
 
-                    """
+                        """
+                    }
                 }
             }
         }
@@ -340,35 +334,37 @@ pipeline {
         stage('Quality Gate') {
 
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
 
-                timeout(
-                    time: 10,
-                    unit: 'MINUTES'
-                ) {
+                    timeout(
+                        time: 10,
+                        unit: 'MINUTES'
+                    ) {
 
-                    script {
+                        script {
 
-                        echo '========================================='
-                        echo 'Waiting for SonarQube Quality Gate'
-                        echo '========================================='
+                            echo '========================================='
+                            echo 'Waiting for SonarQube Quality Gate'
+                            echo '========================================='
 
-                        def qualityGate = waitForQualityGate()
+                            def qualityGate = waitForQualityGate()
 
-                        echo ""
-                        echo "========================================="
-                        echo "SonarQube Quality Gate: ${qualityGate.status}"
-                        echo "========================================="
+                            echo ""
+                            echo "========================================="
+                            echo "SonarQube Quality Gate: \${qualityGate.status}"
+                            echo "========================================="
 
-                        if (qualityGate.status != 'OK') {
+                            if (qualityGate.status != 'OK') {
 
-                            error(
-                                "SonarQube Quality Gate failed: " +
-                                "${qualityGate.status}"
-                            )
+                                error(
+                                    "SonarQube Quality Gate failed: " +
+                                    "\${qualityGate.status}"
+                                )
+                            }
+
+                            echo ""
+                            echo "SonarQube Quality Gate PASSED."
                         }
-
-                        echo ""
-                        echo "SonarQube Quality Gate PASSED."
                     }
                 }
             }
@@ -382,532 +378,534 @@ pipeline {
         stage('Fetch SonarQube Report Data') {
 
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
 
-                script {
+                    script {
 
-                    def sonarData = [:]
-                    def severityData = [:]
+                        def sonarData = [:]
+                        def severityData = [:]
 
-                    try {
+                        try {
 
-                        withSonarQubeEnv('SonarQube-Server') {
+                            withSonarQubeEnv('SonarQube-Server') {
 
-                            // =================================================
-                            // Metric Helper
-                            // =================================================
+                                // =================================================
+                                // Metric Helper
+                                // =================================================
 
-                            def getMetricValue = {
-                                measures,
-                                metricName,
-                                fallback = '0' ->
+                                def getMetricValue = {
+                                    measures,
+                                    metricName,
+                                    fallback = '0' ->
 
-                                def measure =
-                                    measures.find {
-                                        it.metric == metricName
+                                    def measure =
+                                        measures.find {
+                                            it.metric == metricName
+                                        }
+
+                                    if (!measure) {
+                                        return fallback
                                     }
 
-                                if (!measure) {
-                                    return fallback
-                                }
-
-                                def rawValue = measure.value
-
-                                if (
-                                    rawValue == null ||
-                                    rawValue == ''
-                                ) {
+                                    def rawValue = measure.value
 
                                     if (
-                                        measure.period?.value != null &&
-                                        measure.period.value != ''
-                                    ) {
-
-                                        rawValue =
-                                            measure.period.value
-
-                                    } else if (
-                                        measure.periods?.size() > 0
-                                    ) {
-
-                                        def period =
-                                            measure.periods.find {
-                                                it.index == 1
-                                            } ?: measure.periods.first()
-
-                                        rawValue =
-                                            period?.value
-                                    }
-                                }
-
-                                return (
-                                    rawValue == null ||
-                                    rawValue == ''
-                                ) ? fallback :
-                                    rawValue.toString()
-                            }
-
-
-                            // =================================================
-                            // FETCH PROJECT METRICS
-                            // =================================================
-
-                            def metricsResponse = sh(
-
-                                script: """
-
-                                    curl --fail \
-                                        --silent \
-                                        --show-error \\
-                                        -H 'Accept: application/json' \\
-                                        -u ${env.SONAR_AUTH_TOKEN}: \\
-                                        "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
-
-                                """,
-
-                                returnStdout: true
-                            ).trim()
-
-
-                            echo ""
-                            echo "========== RAW SONAR RESPONSE =========="
-                            echo metricsResponse
-                            echo "========================================="
-
-
-                            def metricsJson =
-                                readJSON(
-                                    text: metricsResponse,
-                                    returnPojo: true
-                                )
-
-                            def measures =
-                                metricsJson.component?.measures ?: []
-
-
-                            if (measures.isEmpty()) {
-
-                                error(
-                                    "SonarQube API did not return any measures."
-                                )
-                            }
-
-
-                            // =================================================
-                            // BUILD METRIC MAP
-                            // =================================================
-
-                            def metricMap = [:]
-
-                            measures.each { measure ->
-
-                                def rawValue =
-                                    measure.value
-
-                                if (
-                                    rawValue == null ||
-                                    rawValue == ''
-                                ) {
-
-                                    if (
-                                        measure.period?.value != null &&
-                                        measure.period.value != ''
-                                    ) {
-
-                                        rawValue =
-                                            measure.period.value
-
-                                    } else if (
-                                        measure.periods?.size() > 0
-                                    ) {
-
-                                        def period =
-                                            measure.periods.find {
-                                                it.index == 1
-                                            } ?: measure.periods.first()
-
-                                        rawValue =
-                                            period?.value
-                                    }
-                                }
-
-                                metricMap[measure.metric] =
-                                    (
                                         rawValue == null ||
                                         rawValue == ''
-                                    ) ? '0' :
-                                    rawValue.toString()
-                            }
-
-
-                            echo ""
-                            echo "========== SONAR METRICS =========="
-
-                            metricMap.each { key, value ->
-
-                                echo String.format(
-                                    "%-30s : %s",
-                                    key,
-                                    value
-                                )
-                            }
-
-                            echo "==================================="
-
-
-                            // =================================================
-                            // STORE METRICS
-                            // =================================================
-
-                            sonarData.bugs =
-                                getMetricValue(
-                                    measures,
-                                    'bugs',
-                                    '0'
-                                )
-
-                            sonarData.vulnerabilities =
-                                getMetricValue(
-                                    measures,
-                                    'vulnerabilities',
-                                    '0'
-                                )
-
-                            sonarData.codeSmells =
-                                getMetricValue(
-                                    measures,
-                                    'code_smells',
-                                    '0'
-                                )
-
-                            sonarData.coverage =
-                                getMetricValue(
-                                    measures,
-                                    'coverage',
-                                    '0.0'
-                                )
-
-                            sonarData.duplication =
-                                getMetricValue(
-                                    measures,
-                                    'duplicated_lines_density',
-                                    '0.0'
-                                )
-
-                            sonarData.lines =
-                                getMetricValue(
-                                    measures,
-                                    'ncloc',
-                                    '0'
-                                )
-
-                            sonarData.status =
-                                getMetricValue(
-                                    measures,
-                                    'alert_status',
-                                    'UNKNOWN'
-                                )
-
-                            sonarData.hotspots =
-                                getMetricValue(
-                                    measures,
-                                    'security_hotspots',
-                                    '0'
-                                )
-
-                            sonarData.newBugs =
-                                getMetricValue(
-                                    measures,
-                                    'new_bugs',
-                                    '0'
-                                )
-
-                            sonarData.newVulnerabilities =
-                                getMetricValue(
-                                    measures,
-                                    'new_vulnerabilities',
-                                    '0'
-                                )
-
-                            sonarData.newCodeSmells =
-                                getMetricValue(
-                                    measures,
-                                    'new_code_smells',
-                                    '0'
-                                )
-
-                            sonarData.newHotspots =
-                                getMetricValue(
-                                    measures,
-                                    'new_security_hotspots',
-                                    '0'
-                                )
-
-                            sonarData.newCoverage =
-                                getMetricValue(
-                                    measures,
-                                    'new_coverage',
-                                    '0.0'
-                                )
-
-
-                            // =================================================
-                            // FINAL SUMMARY
-                            // =================================================
-
-                            echo ""
-
-                            echo "========== FINAL SUMMARY =========="
-
-                            echo "Quality Gate      : ${sonarData.status}"
-                            echo "Coverage          : ${sonarData.coverage}%"
-                            echo "Code Smells       : ${sonarData.codeSmells}"
-                            echo "Bugs              : ${sonarData.bugs}"
-                            echo "Vulnerabilities   : ${sonarData.vulnerabilities}"
-                            echo "Hotspots          : ${sonarData.hotspots}"
-                            echo "LOC               : ${sonarData.lines}"
-                            echo "Duplication       : ${sonarData.duplication}%"
-                            echo "New Bugs          : ${sonarData.newBugs}"
-                            echo "New Vulns         : ${sonarData.newVulnerabilities}"
-                            echo "New Smells        : ${sonarData.newCodeSmells}"
-                            echo "New Hotspots      : ${sonarData.newHotspots}"
-                            echo "New Coverage      : ${sonarData.newCoverage}%"
-
-                            echo "==================================="
-
-
-                            // =================================================
-                            // FETCH SEVERITY BREAKDOWN
-                            // =================================================
-
-                            def issueResponse = sh(
-
-                                script: """
-
-                                    curl --fail \
-                                        --silent \
-                                        --show-error \\
-                                        -H 'Accept: application/json' \\
-                                        -u ${env.SONAR_AUTH_TOKEN}: \\
-                                        "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=100"
-
-                                """,
-
-                                returnStdout: true
-                            ).trim()
-
-
-                            def issueJson =
-                                readJSON(
-                                    text: issueResponse,
-                                    returnPojo: true
-                                )
-
-
-                            echo ""
-                            echo "========== RAW ISSUE RESPONSE =========="
-                            echo issueResponse
-                            echo "========================================="
-
-
-                            def severityMap = [
-                                'BLOCKER': '0',
-                                'CRITICAL': '0',
-                                'MAJOR': '0',
-                                'MINOR': '0',
-                                'INFO': '0'
-                            ]
-
-
-                            def facetsParsed = false
-
-
-                            if (
-                                issueJson.facets &&
-                                issueJson.facets.size() > 0
-                            ) {
-
-                                issueJson.facets.each { facet ->
-
-                                    if (
-                                        facet.property == 'severities' &&
-                                        facet.values
                                     ) {
 
-                                        facet.values.each { entry ->
+                                        if (
+                                            measure.period?.value != null &&
+                                            measure.period.value != ''
+                                        ) {
 
-                                            def severity =
-                                                entry.val ?: entry.value
+                                            rawValue =
+                                                measure.period.value
 
-                                            def count =
-                                                entry.count
+                                        } else if (
+                                            measure.periods?.size() > 0
+                                        ) {
 
-                                            if (
-                                                severity &&
-                                                count != null
-                                            ) {
+                                            def period =
+                                                measure.periods.find {
+                                                    it.index == 1
+                                                } ?: measure.periods.first()
 
-                                                severityMap[severity] =
-                                                    count.toString()
+                                            rawValue =
+                                                period?.value
+                                        }
+                                    }
 
-                                                facetsParsed = true
+                                    return (
+                                        rawValue == null ||
+                                        rawValue == ''
+                                    ) ? fallback :
+                                        rawValue.toString()
+                                }
+
+
+                                // =================================================
+                                // FETCH PROJECT METRICS
+                                // =================================================
+
+                                def metricsResponse = sh(
+
+                                    script: """
+
+                                        curl --fail \
+                                            --silent \
+                                            --show-error \\
+                                            -H 'Accept: application/json' \\
+                                            -u ${env.SONAR_AUTH_TOKEN}: \\
+                                            "${env.SONAR_HOST}/api/measures/component?component=${env.SONAR_PROJECT_KEY}&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,ncloc,alert_status,security_hotspots,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
+
+                                    """,
+
+                                    returnStdout: true
+                                ).trim()
+
+
+                                echo ""
+                                echo "========== RAW SONAR RESPONSE =========="
+                                echo metricsResponse
+                                echo "========================================="
+
+
+                                def metricsJson =
+                                    readJSON(
+                                        text: metricsResponse,
+                                        returnPojo: true
+                                    )
+
+                                def measures =
+                                    metricsJson.component?.measures ?: []
+
+
+                                if (measures.isEmpty()) {
+
+                                    error(
+                                        "SonarQube API did not return any measures."
+                                    )
+                                }
+
+
+                                // =================================================
+                                // BUILD METRIC MAP
+                                // =================================================
+
+                                def metricMap = [:]
+
+                                measures.each { measure ->
+
+                                    def rawValue =
+                                        measure.value
+
+                                    if (
+                                        rawValue == null ||
+                                        rawValue == ''
+                                    ) {
+
+                                        if (
+                                            measure.period?.value != null &&
+                                            measure.period.value != ''
+                                        ) {
+
+                                            rawValue =
+                                                measure.period.value
+
+                                        } else if (
+                                            measure.periods?.size() > 0
+                                        ) {
+
+                                            def period =
+                                                measure.periods.find {
+                                                    it.index == 1
+                                                } ?: measure.periods.first()
+
+                                            rawValue =
+                                                period?.value
+                                        }
+                                    }
+
+                                    metricMap[measure.metric] =
+                                        (
+                                            rawValue == null ||
+                                            rawValue == ''
+                                        ) ? '0' :
+                                        rawValue.toString()
+                                }
+
+
+                                echo ""
+                                echo "========== SONAR METRICS =========="
+
+                                metricMap.each { key, value ->
+
+                                    echo String.format(
+                                        "%-30s : %s",
+                                        key,
+                                        value
+                                    )
+                                }
+
+                                echo "==================================="
+
+
+                                // =================================================
+                                // STORE METRICS
+                                // =================================================
+
+                                sonarData.bugs =
+                                    getMetricValue(
+                                        measures,
+                                        'bugs',
+                                        '0'
+                                    )
+
+                                sonarData.vulnerabilities =
+                                    getMetricValue(
+                                        measures,
+                                        'vulnerabilities',
+                                        '0'
+                                    )
+
+                                sonarData.codeSmells =
+                                    getMetricValue(
+                                        measures,
+                                        'code_smells',
+                                        '0'
+                                    )
+
+                                sonarData.coverage =
+                                    getMetricValue(
+                                        measures,
+                                        'coverage',
+                                        '0.0'
+                                    )
+
+                                sonarData.duplication =
+                                    getMetricValue(
+                                        measures,
+                                        'duplicated_lines_density',
+                                        '0.0'
+                                    )
+
+                                sonarData.lines =
+                                    getMetricValue(
+                                        measures,
+                                        'ncloc',
+                                        '0'
+                                    )
+
+                                sonarData.status =
+                                    getMetricValue(
+                                        measures,
+                                        'alert_status',
+                                        'UNKNOWN'
+                                    )
+
+                                sonarData.hotspots =
+                                    getMetricValue(
+                                        measures,
+                                        'security_hotspots',
+                                        '0'
+                                    )
+
+                                sonarData.newBugs =
+                                    getMetricValue(
+                                        measures,
+                                        'new_bugs',
+                                        '0'
+                                    )
+
+                                sonarData.newVulnerabilities =
+                                    getMetricValue(
+                                        measures,
+                                        'new_vulnerabilities',
+                                        '0'
+                                    )
+
+                                sonarData.newCodeSmells =
+                                    getMetricValue(
+                                        measures,
+                                        'new_code_smells',
+                                        '0'
+                                    )
+
+                                sonarData.newHotspots =
+                                    getMetricValue(
+                                        measures,
+                                        'new_security_hotspots',
+                                        '0'
+                                    )
+
+                                sonarData.newCoverage =
+                                    getMetricValue(
+                                        measures,
+                                        'new_coverage',
+                                        '0.0'
+                                    )
+
+
+                                // =================================================
+                                // FINAL SUMMARY
+                                // =================================================
+
+                                echo ""
+
+                                echo "========== FINAL SUMMARY =========="
+
+                                echo "Quality Gate      : ${sonarData.status}"
+                                echo "Coverage          : ${sonarData.coverage}%"
+                                echo "Code Smells       : ${sonarData.codeSmells}"
+                                echo "Bugs              : ${sonarData.bugs}"
+                                echo "Vulnerabilities   : ${sonarData.vulnerabilities}"
+                                echo "Hotspots          : ${sonarData.hotspots}"
+                                echo "LOC               : ${sonarData.lines}"
+                                echo "Duplication       : ${sonarData.duplication}%"
+                                echo "New Bugs          : ${sonarData.newBugs}"
+                                echo "New Vulns         : ${sonarData.newVulnerabilities}"
+                                echo "New Smells        : ${sonarData.newCodeSmells}"
+                                echo "New Hotspots      : ${sonarData.newHotspots}"
+                                echo "New Coverage      : ${sonarData.newCoverage}%"
+
+                                echo "==================================="
+
+
+                                // =================================================
+                                // FETCH SEVERITY BREAKDOWN
+                                // =================================================
+
+                                def issueResponse = sh(
+
+                                    script: """
+
+                                        curl --fail \
+                                            --silent \
+                                            --show-error \\
+                                            -H 'Accept: application/json' \\
+                                            -u ${env.SONAR_AUTH_TOKEN}: \\
+                                            "${env.SONAR_HOST}/api/issues/search?componentKeys=${env.SONAR_PROJECT_KEY}&facets=severities&ps=100"
+
+                                    """,
+
+                                    returnStdout: true
+                                ).trim()
+
+
+                                def issueJson =
+                                    readJSON(
+                                        text: issueResponse,
+                                        returnPojo: true
+                                    )
+
+
+                                echo ""
+                                echo "========== RAW ISSUE RESPONSE =========="
+                                echo issueResponse
+                                echo "========================================="
+
+
+                                def severityMap = [
+                                    'BLOCKER': '0',
+                                    'CRITICAL': '0',
+                                    'MAJOR': '0',
+                                    'MINOR': '0',
+                                    'INFO': '0'
+                                ]
+
+
+                                def facetsParsed = false
+
+
+                                if (
+                                    issueJson.facets &&
+                                    issueJson.facets.size() > 0
+                                ) {
+
+                                    issueJson.facets.each { facet ->
+
+                                        if (
+                                            facet.property == 'severities' &&
+                                            facet.values
+                                        ) {
+
+                                            facet.values.each { entry ->
+
+                                                def severity =
+                                                    entry.val ?: entry.value
+
+                                                def count =
+                                                    entry.count
+
+                                                if (
+                                                    severity &&
+                                                    count != null
+                                                ) {
+
+                                                    severityMap[severity] =
+                                                        count.toString()
+
+                                                    facetsParsed = true
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
 
-                            if (
-                                !facetsParsed &&
-                                issueJson.issues
-                            ) {
+                                if (
+                                    !facetsParsed &&
+                                    issueJson.issues
+                                ) {
 
-                                def issueCounts = [:]
+                                    def issueCounts = [:]
 
-                                issueJson.issues.each { issue ->
+                                    issueJson.issues.each { issue ->
 
-                                    def severity =
-                                        issue.severity
+                                        def severity =
+                                            issue.severity
 
-                                    if (severity) {
+                                        if (severity) {
 
-                                        issueCounts[severity] =
-                                            (
-                                                issueCounts[severity] ?: 0
-                                            ) + 1
+                                            issueCounts[severity] =
+                                                (
+                                                    issueCounts[severity] ?: 0
+                                                ) + 1
+                                        }
+                                    }
+
+
+                                    issueCounts.each {
+                                        severity,
+                                        count ->
+
+                                        severityMap[severity] =
+                                            count.toString()
                                     }
                                 }
 
 
-                                issueCounts.each {
-                                    severity,
-                                    count ->
+                                echo ""
+                                echo "Final severity map:"
+                                echo severityMap
 
-                                    severityMap[severity] =
-                                        count.toString()
-                                }
+
+                                severityData.BLOCKER =
+                                    severityMap['BLOCKER'] ?: '0'
+
+                                severityData.CRITICAL =
+                                    severityMap['CRITICAL'] ?: '0'
+
+                                severityData.MAJOR =
+                                    severityMap['MAJOR'] ?: '0'
+
+                                severityData.MINOR =
+                                    severityMap['MINOR'] ?: '0'
+
+                                severityData.INFO =
+                                    severityMap['INFO'] ?: '0'
+
+
+                                echo ""
+                                echo "========== SEVERITY BREAKDOWN =========="
+
+                                echo "Blocker  : ${severityData.BLOCKER}"
+                                echo "Critical : ${severityData.CRITICAL}"
+                                echo "Major    : ${severityData.MAJOR}"
+                                echo "Minor    : ${severityData.MINOR}"
+                                echo "Info     : ${severityData.INFO}"
+
+                                echo "========================================"
                             }
 
 
+                            // =====================================================
+                            // PERSIST ENVIRONMENT VARIABLES
+                            // =====================================================
+
+                            env.SONAR_BUGS =
+                                sonarData.bugs ?: '0'
+
+                            env.SONAR_VULNERABILITIES =
+                                sonarData.vulnerabilities ?: '0'
+
+                            env.SONAR_CODE_SMELLS =
+                                sonarData.codeSmells ?: '0'
+
+                            env.SONAR_COVERAGE =
+                                sonarData.coverage ?: '0.0'
+
+                            env.SONAR_DUPLICATION =
+                                sonarData.duplication ?: '0.0'
+
+                            env.SONAR_LINES =
+                                sonarData.lines ?: '0'
+
+                            env.SONAR_STATUS =
+                                sonarData.status ?: 'UNKNOWN'
+
+                            env.SONAR_HOTSPOTS =
+                                sonarData.hotspots ?: '0'
+
+                            env.SONAR_NEW_BUGS =
+                                sonarData.newBugs ?: '0'
+
+                            env.SONAR_NEW_VULNERABILITIES =
+                                sonarData.newVulnerabilities ?: '0'
+
+                            env.SONAR_NEW_CODE_SMELLS =
+                                sonarData.newCodeSmells ?: '0'
+
+                            env.SONAR_NEW_HOTSPOTS =
+                                sonarData.newHotspots ?: '0'
+
+                            env.SONAR_NEW_COVERAGE =
+                                sonarData.newCoverage ?: '0.0'
+
+
+                            env.SONAR_BLOCKER =
+                                severityData.BLOCKER ?: '0'
+
+                            env.SONAR_CRITICAL =
+                                severityData.CRITICAL ?: '0'
+
+                            env.SONAR_MAJOR =
+                                severityData.MAJOR ?: '0'
+
+                            env.SONAR_MINOR =
+                                severityData.MINOR ?: '0'
+
+                            env.SONAR_INFO =
+                                severityData.INFO ?: '0'
+
+
+                            // =====================================================
+                            // PRINT PERSISTED VALUES
+                            // =====================================================
+
                             echo ""
-                            echo "Final severity map:"
-                            echo severityMap
 
+                            echo "========== PERSISTED ENV VARS =========="
 
-                            severityData.BLOCKER =
-                                severityMap['BLOCKER'] ?: '0'
-
-                            severityData.CRITICAL =
-                                severityMap['CRITICAL'] ?: '0'
-
-                            severityData.MAJOR =
-                                severityMap['MAJOR'] ?: '0'
-
-                            severityData.MINOR =
-                                severityMap['MINOR'] ?: '0'
-
-                            severityData.INFO =
-                                severityMap['INFO'] ?: '0'
-
-
-                            echo ""
-                            echo "========== SEVERITY BREAKDOWN =========="
-
-                            echo "Blocker  : ${severityData.BLOCKER}"
-                            echo "Critical : ${severityData.CRITICAL}"
-                            echo "Major    : ${severityData.MAJOR}"
-                            echo "Minor    : ${severityData.MINOR}"
-                            echo "Info     : ${severityData.INFO}"
+                            echo "SONAR_BUGS       = ${env.SONAR_BUGS}"
+                            echo "SONAR_BLOCKER    = ${env.SONAR_BLOCKER}"
+                            echo "SONAR_CRITICAL   = ${env.SONAR_CRITICAL}"
+                            echo "SONAR_MAJOR      = ${env.SONAR_MAJOR}"
+                            echo "SONAR_MINOR      = ${env.SONAR_MINOR}"
+                            echo "SONAR_INFO       = ${env.SONAR_INFO}"
+                            echo "SONAR_COVERAGE   = ${env.SONAR_COVERAGE}"
 
                             echo "========================================"
                         }
 
+                        catch (Exception e) {
 
-                        // =====================================================
-                        // PERSIST ENVIRONMENT VARIABLES
-                        // =====================================================
-
-                        env.SONAR_BUGS =
-                            sonarData.bugs ?: '0'
-
-                        env.SONAR_VULNERABILITIES =
-                            sonarData.vulnerabilities ?: '0'
-
-                        env.SONAR_CODE_SMELLS =
-                            sonarData.codeSmells ?: '0'
-
-                        env.SONAR_COVERAGE =
-                            sonarData.coverage ?: '0.0'
-
-                        env.SONAR_DUPLICATION =
-                            sonarData.duplication ?: '0.0'
-
-                        env.SONAR_LINES =
-                            sonarData.lines ?: '0'
-
-                        env.SONAR_STATUS =
-                            sonarData.status ?: 'UNKNOWN'
-
-                        env.SONAR_HOTSPOTS =
-                            sonarData.hotspots ?: '0'
-
-                        env.SONAR_NEW_BUGS =
-                            sonarData.newBugs ?: '0'
-
-                        env.SONAR_NEW_VULNERABILITIES =
-                            sonarData.newVulnerabilities ?: '0'
-
-                        env.SONAR_NEW_CODE_SMELLS =
-                            sonarData.newCodeSmells ?: '0'
-
-                        env.SONAR_NEW_HOTSPOTS =
-                            sonarData.newHotspots ?: '0'
-
-                        env.SONAR_NEW_COVERAGE =
-                            sonarData.newCoverage ?: '0.0'
-
-
-                        env.SONAR_BLOCKER =
-                            severityData.BLOCKER ?: '0'
-
-                        env.SONAR_CRITICAL =
-                            severityData.CRITICAL ?: '0'
-
-                        env.SONAR_MAJOR =
-                            severityData.MAJOR ?: '0'
-
-                        env.SONAR_MINOR =
-                            severityData.MINOR ?: '0'
-
-                        env.SONAR_INFO =
-                            severityData.INFO ?: '0'
-
-
-                        // =====================================================
-                        // PRINT PERSISTED VALUES
-                        // =====================================================
-
-                        echo ""
-
-                        echo "========== PERSISTED ENV VARS =========="
-
-                        echo "SONAR_BUGS       = ${env.SONAR_BUGS}"
-                        echo "SONAR_BLOCKER    = ${env.SONAR_BLOCKER}"
-                        echo "SONAR_CRITICAL   = ${env.SONAR_CRITICAL}"
-                        echo "SONAR_MAJOR      = ${env.SONAR_MAJOR}"
-                        echo "SONAR_MINOR      = ${env.SONAR_MINOR}"
-                        echo "SONAR_INFO       = ${env.SONAR_INFO}"
-                        echo "SONAR_COVERAGE   = ${env.SONAR_COVERAGE}"
-
-                        echo "========================================"
-                    }
-
-                    catch (Exception e) {
-
-                        echo(
-                            "WARNING: Could not fetch SonarQube metrics: " +
-                            "${e.message}"
-                        )
+                            echo(
+                                "WARNING: Could not fetch SonarQube metrics: " +
+                                "${e.message}"
+                            )
+                        }
                     }
                 }
             }
