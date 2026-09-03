@@ -948,8 +948,8 @@ pipeline {
             script {
 
                 sonarNativePdfReport(
-                    recipientEmail: 'ovt.bangalore@gmail.com',
-                    fromEmail: 'sathish.s@vimatch.in'
+                    recipientEmail: 'sathish.s@vimatch.in',
+                    fromEmail: 'camnex.alerts@gmail.com'
                 )
             }
 
