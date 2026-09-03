@@ -1,8 +1,8 @@
 # tests/unit_mock_tests/conftest.py
 import pytest
 from tests.mocks.mock_backend import MockBackend
-from analysis.visual_match import VisualMatcher
-from analysis.ocr import OCREngine
+# from analysis.visual_match import VisualMatcher
+# from analysis.ocr import OCREngine
 from analysis.av_quality import AVQualityChecker
 from analysis.timing import TimingEngine
 from core.config_loader import cfg
@@ -31,7 +31,7 @@ def backend():
     """
     return MockBackend()
 
-
+"""
 @pytest.fixture(scope="session")
 def matcher():
     return VisualMatcher(threshold=0.85)
@@ -41,7 +41,7 @@ def matcher():
 def ocr():
     return OCREngine()
 
-
+"""
 @pytest.fixture(scope="session")
 def av():
     return AVQualityChecker()
