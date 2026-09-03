@@ -6,3 +6,4 @@ opencv-python==4.13.0.92
 pillow==12.2.0
 PyYAML==6.0.3
 dotenv==0.9.9
+pytesseract==0.3.13
